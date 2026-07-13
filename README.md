@@ -266,7 +266,7 @@ Projeto desenvolvido para uso interno da **SCM Reformas e Engenharia**.
 
 # 👩‍💻 Desenvolvido por
 
-**SCM Reformas e Engenharia**
+**Deise Maria de Oliveira**
 
 Projeto SCM_GOV
 
