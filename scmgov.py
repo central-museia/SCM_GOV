@@ -4,12 +4,14 @@ Radar Estratégico de Licitações Públicas
 Autor: Deise Maria de Oliveira a serviço da SCM Engenharia
 """
 
+import sys
+import os
 from pathlib import Path
-import streamlit as st
 
-# Adiciona o diretório atual ao path do Python
+# Adiciona o diretório raiz ao path do Python para encontrar as pastas api, services, etc.
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+import streamlit as st
 from database.migrations import inicializar_banco
 from api.contratacoes import ContratacoesService
 from services.estatistica_service import EstatisticaService
