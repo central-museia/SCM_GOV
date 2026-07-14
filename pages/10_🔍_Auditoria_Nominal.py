@@ -1,56 +1,331 @@
 import streamlit as st
 import ast
-import os
 from pathlib import Path
 
-st.set_page_config(page_title="Auditoria Nominal", layout="wide")
 
-st.title("🔍 Auditoria Nominal do SCM_GOV")
-st.write("Esta página varre automaticamente todas as pastas do projeto e extrai classes e funções criadas.")
+# ==========================================================
+# CONFIGURAÇÃO
+# ==========================================================
 
-# Pastas que queremos auditar
-pastas_para_auditar = ["api", "services", "models", "database"]
+st.set_page_config(
+    page_title="Auditoria Nominal SCM_GOV",
+    layout="wide"
+)
 
-def analisar_arquivo(caminho_arquivo):
-    with open(caminho_arquivo, "r", encoding="utf-8") as f:
-        tree = ast.parse(f.read())
+
+st.title("🔍 Auditoria Nominal SCM_GOV")
+
+st.write(
+    """
+    Mapeamento automático da arquitetura.
     
-    funcoes = []
-    classes = []
-    
-    for node in tree.body:
-        if isinstance(node, ast.FunctionDef):
-            funcoes.append(node.name)
+    Extrai:
+    - Serviços
+    - Classes
+    - Funções
+    - Métodos
+    - Parâmetros
+    - Dependências
+    """
+)
+
+
+# ==========================================================
+# PASTAS AUDITADAS
+# ==========================================================
+
+pastas_para_auditar = [
+    "services",
+    "api",
+    "models",
+    "database"
+]
+
+
+# ==========================================================
+# ANALISADOR AST
+# ==========================================================
+
+def analisar_arquivo(caminho):
+
+    with open(
+        caminho,
+        "r",
+        encoding="utf-8"
+    ) as arquivo:
+
+        codigo = arquivo.read()
+
+
+    arvore = ast.parse(codigo)
+
+
+    resultado = {
+
+        "arquivo": caminho.name,
+
+        "classes": [],
+
+        "funcoes": [],
+
+        "imports": []
+
+    }
+
+
+    for node in ast.walk(arvore):
+
+
+        # -------------------------
+        # IMPORTS
+        # -------------------------
+
+        if isinstance(node, ast.Import):
+
+            for item in node.names:
+                resultado["imports"].append(
+                    item.name
+                )
+
+
+        elif isinstance(node, ast.ImportFrom):
+
+            modulo = node.module or ""
+
+            resultado["imports"].append(
+                modulo
+            )
+
+
+
+        # -------------------------
+        # CLASSES
+        # -------------------------
+
         elif isinstance(node, ast.ClassDef):
-            classes.append(node.name)
-            # Verifica métodos dentro da classe
-            for item in node.body:
-                if isinstance(item, ast.FunctionDef):
-                    funcoes.append(f"{node.name}.{item.name}")
-                    
-    return classes, funcoes
 
-# Interface
+            classe = {
+
+                "nome": node.name,
+
+                "linha": node.lineno,
+
+                "metodos": []
+
+            }
+
+
+            for metodo in node.body:
+
+                if isinstance(
+                    metodo,
+                    ast.FunctionDef
+                ):
+
+                    classe["metodos"].append({
+
+                        "nome": metodo.name,
+
+                        "linha": metodo.lineno,
+
+                        "parametros": [
+
+                            arg.arg
+
+                            for arg in metodo.args.args
+
+                        ]
+
+                    })
+
+
+            resultado["classes"].append(
+                classe
+            )
+
+
+
+        # -------------------------
+        # FUNÇÕES
+        # -------------------------
+
+        elif isinstance(
+            node,
+            ast.FunctionDef
+        ):
+
+
+            resultado["funcoes"].append({
+
+                "nome": node.name,
+
+                "linha": node.lineno,
+
+                "parametros": [
+
+                    arg.arg
+
+                    for arg in node.args.args
+
+                ]
+
+            })
+
+
+    return resultado
+
+
+
+# ==========================================================
+# EXECUÇÃO
+# ==========================================================
+
+
 for pasta in pastas_para_auditar:
-    st.subheader(f"📁 Pasta: {pasta.upper()}")
-    path = Path(pasta)
-    
-    if path.exists():
-        arquivos = [f for f in path.glob("*.py") if f.name != "__init__.py"]
-        
-        for arquivo in arquivos:
-            with st.expander(f"📄 {arquivo.name}"):
-                classes, funcoes = analisar_arquivo(arquivo)
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.write("**Classes:**")
-                    for c in classes: st.code(c)
-                with col2:
-                    st.write("**Funções/Métodos:**")
-                    for f in funcoes: st.code(f)
-    else:
-        st.warning(f"Pasta {pasta} não encontrada.")
+
+
+    st.divider()
+
+    st.header(
+        f"📁 {pasta.upper()}"
+    )
+
+
+    diretorio = Path(pasta)
+
+
+    if not diretorio.exists():
+
+        st.warning(
+            f"Pasta {pasta} não encontrada"
+        )
+
+        continue
+
+
+
+    arquivos = list(
+        diretorio.rglob("*.py")
+    )
+
+
+
+    for arquivo in arquivos:
+
+
+        if arquivo.name == "__init__.py":
+            continue
+
+
+        dados = analisar_arquivo(
+            arquivo
+        )
+
+
+        with st.expander(
+            f"📄 {arquivo}"
+        ):
+
+
+
+            # --------------------------------
+            # FUNÇÕES
+            # --------------------------------
+
+            st.subheader(
+                "⚙️ Funções"
+            )
+
+
+            if dados["funcoes"]:
+
+                for funcao in dados["funcoes"]:
+
+                    st.code(
+
+                        f"""
+{funcao['nome']}(
+    {', '.join(funcao['parametros'])}
+)
+
+Linha: {funcao['linha']}
+                        """
+
+                    )
+
+            else:
+
+                st.info(
+                    "Nenhuma função encontrada"
+                )
+
+
+
+            # --------------------------------
+            # CLASSES
+            # --------------------------------
+
+            st.subheader(
+                "🏗 Classes"
+            )
+
+
+            for classe in dados["classes"]:
+
+
+                st.success(
+                    f"{classe['nome']} "
+                    f"(linha {classe['linha']})"
+                )
+
+
+                for metodo in classe["metodos"]:
+
+                    st.code(
+
+                        f"""
+{classe['nome']}.{metodo['nome']}(
+    {', '.join(metodo['parametros'])}
+)
+
+Linha: {metodo['linha']}
+                        """
+
+                    )
+
+
+
+            # --------------------------------
+            # IMPORTS
+            # --------------------------------
+
+            st.subheader(
+                "🔗 Dependências"
+            )
+
+
+            if dados["imports"]:
+
+                for imp in dados["imports"]:
+
+                    st.write(
+                        f"• {imp}"
+                    )
+
+            else:
+
+                st.info(
+                    "Sem imports"
+                )
+
 
 st.divider()
-st.info("Nota: Esta auditoria lê apenas arquivos .py nas pastas raiz de cada domínio.")
+
+
+st.success(
+    """
+Auditoria concluída.
+
+O relatório acima representa o mapa nominal atual do código SCM_GOV.
+"""
+)
