@@ -7,10 +7,10 @@ Autor: SCM Engenharia
 """
 
 from pathlib import Path
-
 import streamlit as st
-
 from database.migrations import inicializar_banco
+from api.contratacoes import ContratacoesService
+from services.estatistica_service import EstatisticaService
 
 # ==============================================================================
 # CONFIGURAÇÃO DA PÁGINA
@@ -28,6 +28,25 @@ st.set_page_config(
 # ==============================================================================
 
 inicializar_banco()
+
+# ==============================================================================
+# LÓGICA DE DADOS (Integração API + Service)
+# ==============================================================================
+@st.cache_data(ttl=3600)
+def carregar_dados_reais():
+    # 1. Busca os dados brutos da API
+    service_api = ContratacoesService()
+    dados_brutos = service_api.buscar_licitacoes_abertas() # Ajuste o nome do método conforme seu arquivo
+    
+    # 2. Processa via EstatisticaService
+    return EstatisticaService.resumo(dados_brutos) if dados_brutos else None
+
+# Carrega os dados processados
+resumo = carregar_dados_reais()
+
+# Fallback para caso a API retorne vazio
+if not resumo:
+    resumo = {"total": 0, "oportunidades": 0, "orgaos": {}, "score_medio": 0}
 
 # ==============================================================================
 # CARREGAR CSS
@@ -71,22 +90,19 @@ SCM Reformas e Engenharia invista tempo na preparação de uma proposta.
 st.divider()
 
 # ==============================================================================
-# INDICADORES
+# INDICADORES (Dinâmicos)
 # ==============================================================================
-
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.metric("🔍 Licitações Abertas", "0")
-
+    st.metric("🔍 Licitações Abertas", resumo.get("total", 0))
 with col2:
-    st.metric("⭐ Oportunidades", "0")
-
+    st.metric("⭐ Oportunidades", resumo.get("oportunidades", 0))
 with col3:
-    st.metric("🏛️ Órgãos", "0")
-
+    # Mostra o total de órgãos monitorados (tamanho do dicionário)
+    st.metric("🏛️ Órgãos", len(resumo.get("orgaos", {})))
 with col4:
-    st.metric("📅 Atas Vigentes", "0")
+    st.metric("📅 Score Médio", resumo.get("score_medio", 0))
 
 # ==============================================================================
 # VISÃO GERAL
