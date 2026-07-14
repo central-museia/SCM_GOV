@@ -1,11 +1,3 @@
-from api.parser import PNCPParser
-
-resultado = pncp.get(...)
-
-atas = PNCPParser.parse_atas(
-    resultado["data"]
-)
-
 """
 Consultas de Atas de Registro de Preços - API PNCP
 
@@ -17,7 +9,22 @@ from api.endpoints import (
     ATAS,
     ATAS_ATUALIZACAO,
 )
+from api.parser import PNCPParser
 
+# ==========================================================
+# FUNÇÃO PARA USAR NO DASHBOARD
+# ==========================================================
+
+def buscar_atas_processadas(data_inicial, data_final):
+    """
+    Função organizada que faz a busca e já aplica o parser.
+    Use esta função no seu Dashboard para evitar erros.
+    """
+    resposta = consultar(data_inicial=data_inicial, data_final=data_final)
+    
+    if resposta.get("success"):
+        return PNCPParser.parse_atas(resposta["data"])
+    return []
 
 # ==========================================================
 # CONSULTAR ATAS POR PERÍODO DE VIGÊNCIA
