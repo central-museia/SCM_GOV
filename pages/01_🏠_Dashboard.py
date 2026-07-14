@@ -1,8 +1,10 @@
 import streamlit as st
 from datetime import datetime, timedelta
-from api.contratacoes import propostas_abertas
+# IMPORTAÇÕES ATUALIZADAS
+from api.contratacoes import consultar_todas_propostas 
 from api.contratos import publicados
-from api.atas import consultar  # Importado conforme sua estrutura
+from api.atas import consultar
+from services.filtro_service import FiltroService # IMPORTANTE: Adicione esta linha
 
 # ==========================================================
 # CONFIGURAÇÃO E DADOS
@@ -20,22 +22,25 @@ data_final = hoje.strftime("%Y%m%d")
 # Carregar dados (simulando cache)
 @st.cache_data(ttl=3600)
 def carregar_kpis():
-    # Chamadas às funções corrigidas
-    licitacoes = propostas_abertas(data_inicial=data_inicial, data_final=data_final)
-    contratos = publicados(data_inicial=data_inicial, data_final=data_final)
+    # 1. BUSCA TOTAL (Substituímos a função limitada pela varredura completa)
+    dados_brutos = consultar_todas_propostas(data_inicial=data_inicial, data_final=data_final)
     
-    # AQUI ESTAVA O ERRO: Chamando 'consultar' (o nome importado)
+    # 2. FILTRO SCM (Aqui você aplica o filtro que criamos no FiltroService)
+    dados_filtrados = FiltroService.filtrar_por_especificacoes_scm(dados_brutos)
+    
+    # 3. OUTROS (Contratos e Atas - você pode aplicar o filtro neles também se quiser)
+    contratos = publicados(data_inicial=data_inicial, data_final=data_final)
     atas = consultar(data_inicial=data_inicial, data_final=data_final)
     
-    # Extração simples para exibição nos KPIs
-    # Nota: A API PNCP retorna sucesso/data conforme definido no seu client.py
-    total_lic = len(licitacoes.get("data", [])) if licitacoes.get("success") else 0
+    # KPIs baseados nos dados filtrados (SCM)
+    total_lic = len(dados_filtrados) 
     total_con = len(contratos.get("data", [])) if contratos.get("success") else 0
     total_atas = len(atas.get("data", [])) if atas.get("success") else 0
     
-    return total_lic, total_con, total_atas
+    return total_lic, total_con, total_atas, dados_filtrados # Retornamos os dados filtrados também
 
-total_lic, total_con, total_atas = carregar_kpis()
+# Execução
+total_lic, total_con, total_atas, dados_scm = carregar_kpis()
 
 # ==========================================================
 # KPIs
