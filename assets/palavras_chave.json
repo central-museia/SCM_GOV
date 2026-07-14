@@ -1,1 +1,134 @@
+{
+    "engenharia": [
+        "engenharia",
+        "engenheiro",
+        "obra",
+        "obras",
+        "construção",
+        "construcao",
+        "reforma",
+        "reformas",
+        "manutenção",
+        "manutencao",
+        "adequação",
+        "adequacao",
+        "ampliação",
+        "ampliacao",
+        "revitalização",
+        "revitalizacao",
+        "recuperação",
+        "recuperacao"
+    ],
 
+    "fachadas": [
+        "fachada",
+        "fachadas",
+        "revestimento",
+        "revestimentos",
+        "pastilha",
+        "pastilhas",
+        "pele de vidro",
+        "fachada ventilada"
+    ],
+
+    "pintura": [
+        "pintura",
+        "pintura predial",
+        "tinta",
+        "repintura",
+        "textura",
+        "verniz",
+        "esmalte"
+    ],
+
+    "impermeabilizacao": [
+        "impermeabilização",
+        "impermeabilizacao",
+        "manta asfáltica",
+        "manta asfaltica",
+        "resina",
+        "vedação",
+        "vedacao",
+        "infiltração",
+        "infiltracao"
+    ],
+
+    "alvenaria": [
+        "alvenaria",
+        "bloco",
+        "blocos",
+        "tijolo",
+        "tijolos",
+        "argamassa",
+        "concreto",
+        "cimento"
+    ],
+
+    "cobertura": [
+        "telhado",
+        "telhados",
+        "telha",
+        "telhas",
+        "cobertura",
+        "calha",
+        "rufo"
+    ],
+
+    "esquadrias": [
+        "esquadria",
+        "esquadrias",
+        "porta",
+        "portas",
+        "janela",
+        "janelas",
+        "vidro",
+        "vidros",
+        "alumínio",
+        "aluminio"
+    ],
+
+    "instalacoes": [
+        "instalação elétrica",
+        "instalacao eletrica",
+        "instalações elétricas",
+        "instalacoes eletricas",
+        "instalação hidráulica",
+        "instalacao hidraulica",
+        "hidráulica",
+        "hidraulica",
+        "elétrica",
+        "eletrica"
+    ],
+
+    "estruturas": [
+        "estrutura",
+        "estruturas",
+        "estrutura metálica",
+        "estrutura metalica",
+        "metálica",
+        "metalica",
+        "solda"
+    ],
+
+    "acabamentos": [
+        "acabamento",
+        "acabamentos",
+        "gesso",
+        "forro",
+        "drywall",
+        "piso",
+        "pisos",
+        "porcelanato",
+        "cerâmica",
+        "ceramica",
+        "azulejo"
+    ],
+
+    "seguranca": [
+        "NR18",
+        "NR35",
+        "EPI",
+        "andaime",
+        "linha de vida"
+    ]
+}
