@@ -131,7 +131,6 @@ class FiltroService:
             if not item.get("cancelado", False)
         ]
 
-    import json
 
     # Adicione isso dentro da sua classe FiltroService
     @staticmethod
