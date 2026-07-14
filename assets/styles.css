@@ -1,412 +1,77 @@
-"""
-SCM_GOV
-
-Radar Estratégico de Licitações Públicas
-
-Autor: SCM Engenharia
-"""
-
-from pathlib import Path
-import streamlit as st
-
-
-# ============================================================
-# CONFIGURAÇÃO DA PÁGINA
-# ============================================================
-
-favicon = Path("assets/favicon.ico")
-
-st.set_page_config(
-    page_title="SCM_GOV",
-    page_icon=str(favicon) if favicon.exists() else "🏛️",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-
-# ============================================================
-# IMPORTAÇÃO BANCO
-# ============================================================
-
-try:
-    from database.migrations import inicializar_banco
-
-    inicializar_banco()
-
-except Exception as e:
-
-    st.warning(
-        f"""
-        Banco ainda não inicializado.
-
-        Sistema continuará funcionando em modo demonstração.
-
-        Detalhe técnico:
-        {e}
-        """
-    )
-
-
-# ============================================================
-# CARREGAMENTO CSS
-# ============================================================
-
-
-def carregar_css():
-
-    arquivo_css = Path("assets/styles.css")
-
-    if arquivo_css.exists():
-
-        css = arquivo_css.read_text(
-            encoding="utf-8"
-        )
-
-        st.markdown(
-            f"""
-            <style>
-            {css}
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
-
-
-carregar_css()
-
-
-
-# ============================================================
-# CABEÇALHO
-# ============================================================
-
-
-st.title("🏛️ SCM_GOV")
-
-st.caption(
-    "Radar Estratégico de Licitações Públicas"
-)
-
-
-st.write(
-    """
-Sistema inteligente desenvolvido para apoiar a SCM Reformas e Engenharia
-na identificação de oportunidades em licitações públicas.
-
-Transforma dados públicos em inteligência estratégica,
-permitindo decidir onde investir tempo e recursos.
-"""
-)
-
-
-st.divider()
-
-
-
-# ============================================================
-# INDICADORES PRINCIPAIS
-# ============================================================
-
-
-st.header("📌 Indicadores")
-
-
-col1, col2, col3, col4 = st.columns(4)
-
-
-with col1:
-
-    st.metric(
-        label="🔍 Licitações Abertas",
-        value="0"
-    )
-
-
-with col2:
-
-    st.metric(
-        label="⭐ Oportunidades SCM",
-        value="0"
-    )
-
-
-with col3:
-
-    st.metric(
-        label="🏛️ Órgãos Monitorados",
-        value="0"
-    )
-
-
-with col4:
-
-    st.metric(
-        label="📅 Atas Vigentes",
-        value="0"
-    )
-
-
-
-# ============================================================
-# VISÃO GERAL
-# ============================================================
-
-
-st.header("📊 Visão Geral")
-
-
-st.info(
-"""
-## Como funciona o SCM_GOV
-
-O sistema coleta informações oficiais de compras públicas,
-organiza os dados e aplica filtros estratégicos.
-
-A pergunta principal:
-
-> Quais licitações realmente merecem o esforço da SCM?
-
-A plataforma considera:
-
-✔ CNAEs da empresa  
-✔ localização  
-✔ modalidade da contratação  
-✔ objeto da licitação  
-✔ valor estimado  
-✔ prazo  
-✔ histórico do órgão  
-"""
-)
-
-
-
-# ============================================================
-# MÓDULOS
-# ============================================================
-
-
-st.header("🚀 Módulos da Plataforma")
-
-
-c1, c2, c3 = st.columns(3)
-
-
-
-with c1:
-
-
-    st.success(
-"""
-### 🔍 Radar de Licitações
-
-Busca automática de oportunidades abertas.
-"""
-)
-
-
-    st.success(
-"""
-### ⭐ Score SCM
-
-Classificação automática das oportunidades.
-"""
-)
-
-
-    st.success(
-"""
-### 📑 Análise da Licitação
-
-Detalhes completos para decisão.
-"""
-)
-
-
-
-with c2:
-
-
-    st.info(
-"""
-### 🏛️ Órgãos
-
-Monitoramento dos compradores públicos.
-"""
-)
-
-
-    st.info(
-"""
-### 📅 Atas
-
-Controle de atas de registro de preço.
-"""
-)
-
-
-    st.info(
-"""
-### 📋 Contratos
-
-Histórico de contratações.
-"""
-)
-
-
-
-with c3:
-
-
-    st.warning(
-"""
-### 📊 Inteligência
-
-Indicadores estratégicos.
-"""
-)
-
-
-    st.warning(
-"""
-### ⚙️ Configurações
-
-Parâmetros da SCM.
-"""
-)
-
-
-    st.warning(
-"""
-### 🤖 IA SCM
-
-Análises inteligentes.
-"""
-)
-
-
-
-# ============================================================
-# ROADMAP
-# ============================================================
-
-
-st.header("🛣️ Roadmap")
-
-
-st.progress(
-    20
-)
-
-
-roadmap = """
-
-### Concluído
-
-✅ Estrutura inicial do projeto
-
-
-### Em desenvolvimento
-
-🔄 Integração PNCP
-
-🔄 Banco de dados
-
-🔄 Radar automático
-
-🔄 Score SCM
-
-
-### Próximas versões
-
-⏳ Dashboard executivo
-
-⏳ Inteligência Artificial
-
-⏳ Recomendações automáticas
-
-
-"""
-
-
-st.markdown(
-    roadmap
-)
-
-
-
-# ============================================================
-# SOBRE
-# ============================================================
-
-
-st.header("📌 Sobre o Projeto")
-
-
-st.write(
-"""
-O SCM_GOV foi criado exclusivamente para a SCM Reformas e Engenharia.
-
-O objetivo é transformar dados públicos de licitações em uma ferramenta
-de inteligência comercial, reduzindo o tempo de busca e aumentando a
-capacidade de identificar oportunidades aderentes ao perfil da empresa.
-
-"""
-)
-
-
-
-# ============================================================
-# SIDEBAR
-# ============================================================
-
-
-with st.sidebar:
-
-
-    st.image(
-        "assets/logo.png",
-        width=180
-    ) if Path("assets/logo.png").exists() else None
-
-
-    st.title(
-        "SCM_GOV"
-    )
-
-
-    st.markdown(
-"""
-### Menu
-
-🏠 Início
-
-🔍 Licitações
-
-⭐ Oportunidades
-
-🏛️ Órgãos
-
-📊 Dashboard
-
-⚙️ Configurações
-
-"""
-)
-
-
-
-# ============================================================
-# RODAPÉ
-# ============================================================
-
-
-st.divider()
-
-
-st.caption(
-"""
-SCM_GOV • Versão 1.0.0
-
-SCM Reformas e Engenharia
-"""
-)
+/* ============================================================
+   ESTILIZAÇÃO GERAL DO SCM_GOV
+   ============================================================ */
+
+/* Fonte e Fundo */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+html, body, [class*="st-"] {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Remover margens padrão indesejadas */
+.main .block-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+/* Melhoria no visual dos cartões (Success, Info, Warning) */
+.stSuccess, .stInfo, .stWarning {
+    border-radius: 10px;
+    padding: 1rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+/* Customização dos Headers */
+h1, h2, h3 {
+    color: #1e293b;
+    font-weight: 700;
+}
+
+/* Estilo para as métricas (Indicadores) */
+[data-testid="stMetricValue"] {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+[data-testid="stMetricLabel"] {
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+/* Sidebar Customizada */
+[data-testid="stSidebar"] {
+    background-color: #f8fafc;
+    border-right: 1px solid #e2e8f0;
+}
+
+[data-testid="stSidebar"] h1 {
+    font-size: 1.5rem;
+    color: #0f172a;
+}
+
+/* Botões e elementos interativos */
+.stButton > button {
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.stButton > button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Rodapé centralizado */
+.stCaption {
+    text-align: center;
+    color: #94a3b8;
+    margin-top: 2rem;
+}
+
+/* Melhorar divisores */
+hr {
+    border-top: 2px solid #e2e8f0;
+    margin: 2rem 0;
+}
