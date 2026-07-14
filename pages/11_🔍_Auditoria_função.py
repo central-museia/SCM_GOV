@@ -1,48 +1,42 @@
 import streamlit as st
-import ast
 import os
 from pathlib import Path
 
-st.set_page_config(page_title="Auditoria Arquitetural", layout="wide")
+st.set_page_config(page_title="Auditoria Estrutural", layout="wide")
 
-st.title("🔍 Auditoria de Relacionamentos (Arquitetura)")
-st.write("Mapeamento de quais pastas consomem quais módulos.")
+st.title("📂 Auditoria Estrutural do SCM_GOV")
+st.write("Mapeamento das pastas do sistema (ignorando arquivos e funções).")
 
-pastas_alvo = ["pages", "api", "services", "models", "database"]
+# Lista das pastas principais da sua estrutura
+pastas_raiz = [
+    "pages", 
+    "api", 
+    "services", 
+    "models", 
+    "database", 
+    "assets"
+]
 
-def extrair_imports(caminho_arquivo):
-    with open(caminho_arquivo, "r", encoding="utf-8") as f:
-        try:
-            tree = ast.parse(f.read())
-        except:
-            return []
-    
-    imports = set()
-    for node in tree.body:
-        if isinstance(node, ast.ImportFrom):
-            if node.module:
-                imports.add(node.module.split('.')[0])
-        elif isinstance(node, ast.Import):
-            for n in node.names:
-                imports.add(n.name.split('.')[0])
-    return list(imports)
+def listar_pastas(diretorio_raiz):
+    estrutura = {}
+    for pasta in diretorio_raiz:
+        caminho = Path(pasta)
+        if caminho.exists() and caminho.is_dir():
+            # Lista subpastas dentro da pasta principal
+            subpastas = [d.name for d in caminho.iterdir() if d.is_dir()]
+            estrutura[pasta] = subpastas
+    return estrutura
 
-# Mapeamento
-for pasta in pastas_alvo:
-    st.subheader(f"📁 Analisando dependências de: {pasta}")
-    path = Path(pasta)
-    
-    if path.exists():
-        for arquivo in path.glob("**/*.py"):
-            deps = extrair_imports(arquivo)
-            # Filtra apenas imports que são pastas do nosso projeto
-            relacoes = [d for d in deps if d in pastas_alvo and d != pasta]
-            
-            if relacoes:
-                with st.expander(f"Arquivo: {arquivo.relative_to(os.getcwd())}"):
-                    st.write(f"⚠️ Este arquivo importa de: **{', '.join(relacoes)}**")
+estrutura_atual = listar_pastas(pastas_raiz)
+
+# Exibição da Auditoria
+for pasta, subpastas in estrutura_atual.items():
+    st.subheader(f"📁 Pasta: {pasta}")
+    if subpastas:
+        for sub in subpastas:
+            st.write(f"└─ 📂 {sub}")
     else:
-        st.error(f"Pasta {pasta} não encontrada.")
+        st.caption("Nenhuma subpasta encontrada.")
+    st.divider()
 
-st.divider()
-st.info("Esta auditoria ignora imports padrão do Python e foca apenas nas suas pastas de sistema.")
+st.info("Esta página mostra apenas a árvore de diretórios do seu projeto, sem analisar nenhum arquivo ou código.")
