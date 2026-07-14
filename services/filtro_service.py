@@ -131,9 +131,9 @@ class FiltroService:
             if not item.get("cancelado", False)
         ]
 
-import json
+    import json
 
-# Adicione isso dentro da sua classe FiltroService
+    # Adicione isso dentro da sua classe FiltroService
     @staticmethod
     def filtrar_por_especificacoes_scm(dados):
         """
