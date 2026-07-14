@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import json
 from datetime import datetime, timedelta
 from api.contratacoes import consultar_todas_propostas
 from services.filtro_service import FiltroService
@@ -17,21 +18,32 @@ data_final = hoje.strftime("%Y%m%d")
 @st.cache_data(ttl=3600)
 def carregar_oportunidades():
     # 1. Busca tudo da API
-    dados_brutos = consultar_todas_propostas(data_inicial, data_final)
-    # 2. Filtra pelo balizador (CNAEs/Palavras-chave)
-    return FiltroService.filtrar_por_especificacoes_scm(dados_brutos)
+    dados = consultar_todas_propostas(data_inicial, data_final)
+    
+    # 2. Aplica o filtro de palavras-chave usando a função existente 'por_palavra'
+    # Como você tem uma lista de palavras-chave, vamos iterar sobre elas:
+    with open("assets/palavras_chave.json", "r", encoding="utf-8") as f:
+        palavras_chave = json.load(f)
+    
+    dados_filtrados = []
+    for palavra in palavras_chave:
+        # Usa sua função existente
+        resultado = FiltroService.por_palavra(dados, palavra)
+        dados_filtrados.extend(resultado)
+        
+    # Remove duplicados (caso a mesma licitação atenda a duas palavras-chave)
+    dados_unicos = {item['id']: item for item in dados_filtrados}.values()
+    
+    return list(dados_unicos)
 
-# Carrega os dados filtrados
+# Carrega os dados
 oportunidades = carregar_oportunidades()
 
 if not oportunidades:
     st.info("Nenhuma oportunidade encontrada com os critérios atuais.")
 else:
-    # Transformar em DataFrame para exibição amigável
-    # Nota: Ajuste as chaves (ex: 'objeto', 'orgao') conforme o retorno real do seu JSON do PNCP
     df = pd.DataFrame(oportunidades)
     
-    # Seleção de colunas para tomada de decisão
     colunas_exibicao = {
         "objeto": "Objeto",
         "nomeOrgao": "Órgão",
@@ -41,22 +53,27 @@ else:
         "dataAberturaProposta": "Data Abertura"
     }
     
-    # Filtra apenas colunas existentes no DataFrame
-    df_exibicao = df[[c for c in colunas_exibicao.keys() if c in df.columns]]
+    df_exibicao = df[[c for c in colunas_exibicao.keys() if c in df.columns]].copy()
     df_exibicao = df_exibicao.rename(columns=colunas_exibicao)
+    
+    # Adicionando a coluna de seleção necessária para o st.data_editor
+    df_exibicao.insert(0, "Selecionar", False)
 
-    # Componente de seleção (Checkboxes na tabela)
     st.write(f"Total de oportunidades encontradas: {len(df_exibicao)}")
     
-    # Editor de dados interativo (o usuário pode selecionar linhas)
-    selecionadas = st.data_editor(
+    # Editor de dados interativo
+    df_editado = st.data_editor(
         df_exibicao,
         column_config={"Selecionar": st.column_config.CheckboxColumn(default=False)},
         use_container_width=True,
         hide_index=True
     )
 
-    # Botão de Ação
+    # Filtrar apenas as linhas selecionadas pelo usuário
+    selecionadas = df_editado[df_editado["Selecionar"] == True]
+
     if st.button("Gerar Plano de Atuação para Selecionadas"):
-        st.success(f"Você selecionou {len(selecionadas)} licitações para análise.")
-        # Aqui você futuramente chamará o ia_service para analisar os editais
+        if not selecionadas.empty:
+            st.success(f"Você selecionou {len(selecionadas)} licitações para análise.")
+        else:
+            st.warning("Selecione pelo menos uma licitação.")
