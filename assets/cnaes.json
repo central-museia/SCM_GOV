@@ -1,1 +1,42 @@
-
+[
+    {
+        "codigo": "4330-4/04",
+        "descricao": "Serviços de pintura de edifícios em geral",
+        "principal": true
+    },
+    {
+        "codigo": "4330-4/99",
+        "descricao": "Outras obras de acabamento da construção",
+        "principal": false
+    },
+    {
+        "codigo": "43.99-1/03",
+        "descricao": "Obras de alvenaria",
+        "principal": false
+    },
+    {
+        "codigo": "43.99-1/05",
+        "descricao": "Perfuração e construção de poços de água",
+        "principal": false
+    },
+    {
+        "codigo": "43.99-1/99",
+        "descricao": "Serviços especializados para construção não especificados anteriormente",
+        "principal": false
+    },
+    {
+        "codigo": "42.99-5/99",
+        "descricao": "Outras obras de engenharia civil não especificadas anteriormente",
+        "principal": false
+    },
+    {
+        "codigo": "46.79-6/99",
+        "descricao": "Comércio atacadista de materiais de construção em geral",
+        "principal": false
+    },
+    {
+        "codigo": "47.44-0/01",
+        "descricao": "Comércio varejista de ferragens e ferramentas",
+        "principal": false
+    }
+]
