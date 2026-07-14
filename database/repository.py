@@ -1,1 +1,7 @@
+salvar()
 
+listar()
+
+buscar()
+
+deletar()
