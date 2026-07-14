@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from api.contratacoes import propostas_abertas
 # Importando o módulo completo para acessar a função fora da classe
-from services import filtro_service 
+from services.filtro_service import filtrar_por_especificacoes_scm
 
 st.set_page_config(page_title="Oportunidades SCM", layout="wide")
 
