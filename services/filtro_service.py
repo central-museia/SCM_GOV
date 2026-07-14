@@ -5,7 +5,7 @@ Responsável por aplicar filtros nas licitações retornadas pela API.
 
 Autor: SCM_GOV
 """
-
+import json
 
 class FiltroService:
 
