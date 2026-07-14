@@ -1,11 +1,13 @@
+import sys
+import os
+
+# Força o Python a olhar na raiz do projeto, garantindo que ele ache a pasta 'services'
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta
 from api.contratacoes import propostas_abertas
-# Importando o módulo completo para acessar a função fora da classe
-from services.filtro_service import filtrar_por_especificacoes_scm
-
-st.set_page_config(page_title="Oportunidades SCM", layout="wide")
+from services.filtro_service import filtrar_por_especificacoes_scm # Importa direto a função
 
 st.title("⭐ Oportunidades para Atuação")
 
