@@ -130,3 +130,28 @@ class FiltroService:
             item for item in dados
             if not item.get("cancelado", False)
         ]
+
+import json
+
+# Adicione isso dentro da sua classe FiltroService
+    @staticmethod
+    def filtrar_por_especificacoes_scm(dados):
+        """
+        Filtro mestre: Aplica CNAEs e Palavras-chave dos seus assets
+        para retornar apenas o que interessa para a SCM.
+        """
+        # Carrega assets
+        with open("assets/cnaes.json", "r", encoding="utf-8") as f:
+            cnaes_scm = [item['codigo'] for item in json.load(f)]
+            
+        with open("assets/palavras_chave.json", "r", encoding="utf-8") as f:
+            palavras_chave = json.load(f)
+
+        def eh_relevante(item):
+            objeto = item.get("objeto", "").lower()
+            # Verifica se o objeto contém algum CNAE ou palavra-chave
+            match_cnae = any(cnae in objeto for cnae in cnaes_scm)
+            match_palavra = any(p.lower() in objeto for p in palavras_chave)
+            return match_cnae or match_palavra
+
+        return [item for item in dados if eh_relevante(item)]
