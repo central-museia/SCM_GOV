@@ -1,96 +1,51 @@
+"""
+SCM_GOV
+
+Radar Estratégico de Licitações Públicas
+
+Autor: SCM Engenharia
+"""
+
 from pathlib import Path
+
 import streamlit as st
 
-from api.endpoints import *
+from database.migrations import inicializar_banco
 
-url = BASE_URL + CONTRATACOES_PROPOSTA
-
-# -----------------------------------------------------------------------------
-# CONFIGURAÇÃO DA PÁGINA (SEMPRE PRIMEIRO)
-# -----------------------------------------------------------------------------
+# ==============================================================================
+# CONFIGURAÇÃO DA PÁGINA
+# ==============================================================================
 
 st.set_page_config(
     page_title="SCM_GOV",
-    page_icon="assets/favicon.ico",   # ou "🏛️" enquanto não tiver o favicon
+    page_icon="assets/favicon.ico",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# -----------------------------------------------------------------------------
+# ==============================================================================
+# INICIALIZAÇÃO DO SISTEMA
+# ==============================================================================
+
+inicializar_banco()
+
+# ==============================================================================
 # CARREGAR CSS
-# -----------------------------------------------------------------------------
+# ==============================================================================
 
 def carregar_css():
-    css = Path("assets/styles.css").read_text(encoding="utf-8")
-    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+    css_path = Path("assets/styles.css")
+
+    if css_path.exists():
+        css = css_path.read_text(encoding="utf-8")
+        st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+
 
 carregar_css()
 
-# -----------------------------------------------------------------------------
-# A PARTIR DAQUI VEM O RESTANTE DO CÓDIGO
-# -----------------------------------------------------------------------------
-
-st.title("🏛️ SCM_GOV")
-st.write("Plataforma de Inteligência para Licitações Públicas")
-
-# -----------------------------------------------------------------------------
-# CSS
-# -----------------------------------------------------------------------------
-
-st.markdown("""
-<style>
-
-.main {
-    padding-top: 1rem;
-}
-
-.titulo {
-    font-size:42px;
-    font-weight:700;
-    color:#0B5394;
-}
-
-.subtitulo{
-    font-size:20px;
-    color:#666666;
-}
-
-.card{
-    background-color:#F8F9FA;
-    border-radius:12px;
-    padding:20px;
-    border-left:6px solid #0B5394;
-    box-shadow:0px 2px 6px rgba(0,0,0,.08);
-    margin-bottom:15px;
-}
-
-.big{
-    font-size:34px;
-    font-weight:bold;
-    color:#0B5394;
-}
-
-.metric{
-    text-align:center;
-    background:#FFFFFF;
-    border-radius:12px;
-    padding:20px;
-    border:1px solid #DDDDDD;
-}
-
-.footer{
-    text-align:center;
-    color:gray;
-    font-size:13px;
-    margin-top:40px;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-# -----------------------------------------------------------------------------
+# ==============================================================================
 # CABEÇALHO
-# -----------------------------------------------------------------------------
+# ==============================================================================
 
 st.markdown(
     "<div class='titulo'>🏛️ SCM_GOV</div>",
@@ -98,149 +53,167 @@ st.markdown(
 )
 
 st.markdown(
-    "<div class='subtitulo'>Plataforma de Inteligência para Licitações Públicas</div>",
+    """
+<div class='subtitulo'>
+Radar Estratégico de Licitações Públicas
+</div>
+""",
     unsafe_allow_html=True
+)
+
+st.write(
+    """
+Identifique rapidamente quais licitações abertas merecem que a
+SCM Reformas e Engenharia invista tempo na preparação de uma proposta.
+"""
 )
 
 st.divider()
 
-# -----------------------------------------------------------------------------
-# MÉTRICAS (temporárias)
-# -----------------------------------------------------------------------------
+# ==============================================================================
+# INDICADORES
+# ==============================================================================
 
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.metric("Licitações Abertas", "0")
+    st.metric("🔍 Licitações Abertas", "0")
 
 with col2:
-    st.metric("Atas Vigentes", "0")
+    st.metric("⭐ Oportunidades", "0")
 
 with col3:
-    st.metric("Contratos", "0")
+    st.metric("🏛️ Órgãos", "0")
 
 with col4:
-    st.metric("Órgãos Monitorados", "0")
+    st.metric("📅 Atas Vigentes", "0")
 
-st.write("")
-
-# -----------------------------------------------------------------------------
+# ==============================================================================
 # VISÃO GERAL
-# -----------------------------------------------------------------------------
+# ==============================================================================
 
 st.markdown("## 📊 Visão Geral")
 
-st.markdown("""
+st.markdown(
+    """
 <div class="card">
 
-O SCM_GOV foi desenvolvido para apoiar a SCM Reformas e Engenharia na
-identificação, análise e priorização de oportunidades em licitações públicas.
+O SCM_GOV consulta automaticamente os dados oficiais do Portal Nacional
+de Contratações Públicas (PNCP) e organiza as oportunidades para apoiar
+a tomada de decisão da SCM.
 
-A plataforma utilizará dados oficiais do Portal Nacional de Contratações Públicas (PNCP)
-para transformar informações públicas em inteligência para tomada de decisão.
+O objetivo do sistema não é gerenciar licitações, mas responder uma
+pergunta estratégica:
+
+<b>Quais licitações abertas merecem que a SCM invista tempo na preparação
+de uma proposta?</b>
 
 </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True
+)
 
-# -----------------------------------------------------------------------------
+# ==============================================================================
 # MÓDULOS
-# -----------------------------------------------------------------------------
+# ==============================================================================
 
 st.markdown("## 🚀 Módulos da Plataforma")
 
-c1, c2, c3 = st.columns(3)
+col1, col2, col3 = st.columns(3)
 
-with c1:
+with col1:
 
     st.info("""
-### 🔍 Radar
+### 🔍 Radar de Licitações
 
-Consulta automática de oportunidades abertas.
+Consulta das oportunidades abertas no PNCP.
 """)
 
     st.info("""
 ### ⭐ Oportunidades
 
-Licitações classificadas pela SCM.
+Classificação automática utilizando o Score SCM.
 """)
 
     st.info("""
 ### 📑 Detalhes
 
-Análise completa da contratação.
+Análise completa de cada licitação.
 """)
 
-with c2:
+with col2:
 
     st.info("""
 ### 🏛️ Órgãos
 
-Órgãos públicos monitorados.
+Órgãos públicos contratantes.
 """)
 
     st.info("""
-### 📅 Atas
+### 📅 Atas de Registro
 
-Atas de Registro de Preço.
+Consulta das Atas vigentes.
 """)
 
     st.info("""
 ### 📋 Contratos
 
-Consulta de contratos publicados.
+Consulta de contratos públicos.
 """)
 
-with c3:
+with col3:
 
     st.info("""
 ### 📊 Estatísticas
 
-Indicadores estratégicos.
+Indicadores e gráficos.
 """)
 
     st.info("""
 ### ⚙️ Configurações
 
-Filtros e parâmetros.
+Preferências da plataforma.
 """)
 
     st.info("""
 ### 🤖 Inteligência SCM
 
-Sistema de Score e IA.
+Filtros inteligentes, Score SCM e futuras análises por IA.
 """)
 
-# -----------------------------------------------------------------------------
+# ==============================================================================
 # ROADMAP
-# -----------------------------------------------------------------------------
+# ==============================================================================
 
 st.markdown("## 🛣️ Roadmap")
 
-st.progress(5)
+st.progress(20)
 
-st.write("""
+st.markdown("""
 - ✅ Estrutura do projeto
 
-- ⏳ Integração com API do PNCP
+- 🔄 Integração com a API do PNCP
 
-- ⏳ Dashboard
+- 🔄 Implementação do Radar de Licitações
 
-- ⏳ Score SCM
+- 🔄 Score SCM
+
+- 🔄 Dashboard Inteligente
 
 - ⏳ Inteligência Artificial
 """)
 
-# -----------------------------------------------------------------------------
+# ==============================================================================
 # RODAPÉ
-# -----------------------------------------------------------------------------
+# ==============================================================================
 
 st.divider()
 
 st.markdown(
-"""
+    """
 <div class='footer'>
 
-SCM_GOV • Plataforma de Inteligência para Licitações Públicas
+SCM_GOV • Radar Estratégico de Licitações Públicas
 
 Versão 1.0.0
 
@@ -248,5 +221,5 @@ Desenvolvido para SCM Reformas e Engenharia
 
 </div>
 """,
-unsafe_allow_html=True
+    unsafe_allow_html=True
 )
