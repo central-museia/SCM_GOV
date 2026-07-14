@@ -15,8 +15,8 @@ sys.path.insert(0, os.path.abspath(os.getcwd()))
 import streamlit as st
 from database.migrations import inicializar_banco
 
-# Importando exatamente as funções que você definiu em api/contratacoes.py
-from api.contratacoes import propostas_abertas, publicacoes, atualizacoes, consultar
+# IMPORTAÇÃO EXATA DAS SUAS FUNÇÕES
+from api.contratacoes import propostas_abertas
 from services.estatistica_service import EstatisticaService
 
 # ==============================================================================
@@ -32,46 +32,25 @@ st.set_page_config(
 inicializar_banco()
 
 # ==============================================================================
-# LÓGICA DE DADOS (Usando suas funções exatas)
+# LÓGICA DE DADOS (Chamada direta às suas funções)
 # ==============================================================================
 @st.cache_data(ttl=3600)
-def carregar_dados_reais():
-    # Período de busca para alimentar o dashboard
-    hoje = datetime.now()
-    inicio = (hoje - timedelta(days=30)).strftime("%Y%m%d")
-    fim = hoje.strftime("%Y%m%d")
+def obter_dados_do_pncp():
+    # Define o período (ex: últimos 30 dias)
+    hoje = datetime.now().strftime("%Y%m%d")
+    inicio = (datetime.now() - timedelta(days=30)).strftime("%Y%m%d")
     
-    # Chamando sua função exata
-    dados_brutos = propostas_abertas(data_inicial=inicio, data_final=fim)
-    
-    # Processa via seu EstatisticaService
-    if dados_brutos:
-        return EstatisticaService.resumo(dados_brutos)
-    return None
+    # CHAMADA DIRETA DA SUA FUNÇÃO ORIGINAL
+    return propostas_abertas(data_inicial=inicio, data_final=hoje)
 
-resumo = carregar_dados_reais() or {"total": 0, "oportunidades": 0, "orgaos": {}, "score_medio": 0}
+# Carrega os dados brutos da sua função
+dados_brutos = obter_dados_do_pncp()
 
-# ==============================================================================
-# CARREGAR CSS
-# ==============================================================================
-def carregar_css():
-    css_path = Path("assets/styles.css")
-    if css_path.exists():
-        css = css_path.read_text(encoding="utf-8")
-        st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
-
-carregar_css()
+# Processa com seu serviço de estatística
+resumo = EstatisticaService.resumo(dados_brutos) if dados_brutos else {}
 
 # ==============================================================================
-# CABEÇALHO E INTERFACE
-# ==============================================================================
-st.markdown("<div class='titulo'>🏛️ SCM_GOV</div>", unsafe_allow_html=True)
-st.markdown("<div class='subtitulo'>Radar Estratégico de Licitações Públicas</div>", unsafe_allow_html=True)
-st.write("Identifique rapidamente quais licitações abertas merecem que a SCM Reformas e Engenharia invista tempo na preparação de uma proposta.")
-st.divider()
-
-# ==============================================================================
-# INDICADORES
+# INDICADORES (Usando as chaves do seu EstatisticaService)
 # ==============================================================================
 col1, col2, col3, col4 = st.columns(4)
 
