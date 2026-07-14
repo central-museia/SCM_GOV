@@ -1,322 +1,253 @@
-/* ==========================================================
-   SCM_GOV
-   Tema Oficial
-   ========================================================== */
+"""
+SCM_GOV
 
-/* Fonte */
-html, body, [class*="css"] {
-    font-family: "Segoe UI", Arial, sans-serif;
-}
+Radar Estratégico de Licitações Públicas
 
-/* Fundo */
-.stApp{
-    background-color:#F5F7FA;
-}
+Autor: SCM Engenharia
+"""
 
-/* ==========================================================
-   TÍTULOS
-   ========================================================== */
+from pathlib import Path
 
-h1{
-    color:#0B5394;
-    font-size:34px;
-    font-weight:700;
-}
+import streamlit as st
 
-h2{
-    color:#0B5394;
-    font-size:28px;
-    font-weight:600;
-}
+from database.migrations import inicializar_banco
 
-h3{
-    color:#1F2937;
-    font-size:22px;
-    font-weight:600;
-}
+# ==============================================================================
+# CONFIGURAÇÃO DA PÁGINA
+# ==============================================================================
 
-/* ==========================================================
-   CARDS
-   ========================================================== */
+st.set_page_config(
+    page_title="SCM_GOV",
+    page_icon="assets/favicon.ico",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-.card{
+# ==============================================================================
+# INICIALIZAÇÃO
+# ==============================================================================
 
-    background:#FFFFFF;
+inicializar_banco()
 
-    border-radius:12px;
+# ==============================================================================
+# CSS
+# ==============================================================================
 
-    padding:20px;
+def carregar_css():
 
-    border:1px solid #D9E2EC;
+    css = Path("assets/styles.css")
 
-    box-shadow:0 2px 8px rgba(0,0,0,.05);
+    if css.exists():
 
-    margin-bottom:18px;
+        st.markdown(
+            f"<style>{css.read_text(encoding='utf-8')}</style>",
+            unsafe_allow_html=True
+        )
 
-}
 
-/* ==========================================================
-   KPIs
-   ========================================================== */
+carregar_css()
 
-.kpi{
+# ==============================================================================
+# CABEÇALHO
+# ==============================================================================
 
-    background:white;
+st.title("🏛️ SCM_GOV")
 
-    border-radius:12px;
+st.caption("Radar Estratégico de Licitações Públicas")
 
-    padding:18px;
+st.write(
+    """
+Identifique rapidamente quais licitações abertas merecem que a
+SCM Reformas e Engenharia invista tempo na preparação de uma proposta.
+"""
+)
 
-    border-left:6px solid #0B5394;
+st.divider()
 
-    box-shadow:0 2px 6px rgba(0,0,0,.05);
+# ==============================================================================
+# INDICADORES
+# ==============================================================================
 
-    text-align:center;
+col1, col2, col3, col4 = st.columns(4)
 
-}
+with col1:
+    st.metric(
+        "🔍 Licitações Abertas",
+        "0"
+    )
 
-.kpi-titulo{
+with col2:
+    st.metric(
+        "⭐ Oportunidades",
+        "0"
+    )
 
-    color:#6B7280;
+with col3:
+    st.metric(
+        "🏛️ Órgãos",
+        "0"
+    )
 
-    font-size:14px;
+with col4:
+    st.metric(
+        "📅 Atas Vigentes",
+        "0"
+    )
 
-}
+# ==============================================================================
+# VISÃO GERAL
+# ==============================================================================
 
-.kpi-valor{
+st.header("📊 Visão Geral")
 
-    color:#0B5394;
+st.info(
+    """
+O SCM_GOV consulta automaticamente os dados oficiais do Portal Nacional de
+Contratações Públicas (PNCP) e organiza as oportunidades para apoiar
+a tomada de decisão da SCM.
 
-    font-size:34px;
+### Objetivo
 
-    font-weight:bold;
+Responder uma única pergunta:
 
-}
+**Quais licitações abertas merecem que a SCM invista tempo na preparação de uma proposta?**
+"""
+)
 
-/* ==========================================================
-   BOTÕES
-   ========================================================== */
+# ==============================================================================
+# MÓDULOS
+# ==============================================================================
 
-.stButton>button{
+st.header("🚀 Módulos da Plataforma")
 
-    background:#0B5394;
+c1, c2, c3 = st.columns(3)
 
-    color:white;
+with c1:
 
-    border-radius:8px;
+    st.success(
+        """
+### 🔍 Radar de Licitações
 
-    border:none;
+Consulta automática das oportunidades abertas.
+"""
+    )
 
-    padding:10px 18px;
+    st.success(
+        """
+### ⭐ Oportunidades
 
-    font-weight:600;
+Classificação utilizando o Score SCM.
+"""
+    )
 
-}
+    st.success(
+        """
+### 📑 Detalhes
 
-.stButton>button:hover{
+Análise completa da contratação.
+"""
+    )
 
-    background:#09467A;
+with c2:
 
-    color:white;
+    st.info(
+        """
+### 🏛️ Órgãos
 
-}
+Órgãos públicos monitorados.
+"""
+    )
 
-/* ==========================================================
-   SIDEBAR
-   ========================================================== */
+    st.info(
+        """
+### 📅 Atas
 
-[data-testid="stSidebar"]{
+Atas de Registro de Preço.
+"""
+    )
 
-    background:#FFFFFF;
+    st.info(
+        """
+### 📋 Contratos
 
-    border-right:1px solid #E5E7EB;
+Consulta de contratos publicados.
+"""
+    )
 
-}
+with c3:
 
-/* ==========================================================
-   TABELAS
-   ========================================================== */
+    st.warning(
+        """
+### 📊 Estatísticas
 
-table{
+Indicadores estratégicos.
+"""
+    )
 
-    border-collapse:collapse;
+    st.warning(
+        """
+### ⚙️ Configurações
 
-    width:100%;
+Preferências da plataforma.
+"""
+    )
 
-}
+    st.warning(
+        """
+### 🤖 Inteligência SCM
 
-th{
+Filtros inteligentes, Score SCM e IA.
+"""
+    )
 
-    background:#0B5394;
+# ==============================================================================
+# ROADMAP
+# ==============================================================================
 
-    color:white;
+st.header("🛣️ Roadmap")
 
-}
+st.progress(20)
 
-td, th{
+st.markdown("""
 
-    padding:10px;
+✅ Estrutura do projeto
 
-    border:1px solid #E5E7EB;
+🔄 Integração com API do PNCP
 
-}
+🔄 Radar de Licitações
 
-/* ==========================================================
-   ALERTAS
-   ========================================================== */
+🔄 Score SCM
 
-.sucesso{
+🔄 Dashboard Inteligente
 
-    background:#E8F5E9;
+⏳ Inteligência Artificial
 
-    border-left:5px solid #2E7D32;
+""")
 
-    padding:15px;
+# ==============================================================================
+# INFORMAÇÕES
+# ==============================================================================
 
-    border-radius:8px;
+st.header("📌 Sobre o Projeto")
 
-}
+st.write("""
 
-.alerta{
+O SCM_GOV é um sistema desenvolvido exclusivamente para a SCM Reformas e
+Engenharia.
 
-    background:#FFF8E1;
+Seu objetivo é transformar os dados públicos do PNCP em inteligência de
+negócio, reduzindo o tempo gasto na busca por oportunidades e permitindo
+que a equipe concentre seus esforços apenas nas licitações com maior
+potencial de retorno.
 
-    border-left:5px solid #F9A825;
+""")
 
-    padding:15px;
+# ==============================================================================
+# RODAPÉ
+# ==============================================================================
 
-    border-radius:8px;
+st.divider()
 
-}
-
-.erro{
-
-    background:#FDECEA;
-
-    border-left:5px solid #C62828;
-
-    padding:15px;
-
-    border-radius:8px;
-
-}
-
-/* ==========================================================
-   RODAPÉ
-   ========================================================== */
-
-.footer{
-
-    color:#6B7280;
-
-    text-align:center;
-
-    font-size:13px;
-
-    margin-top:40px;
-
-}
-
-/* ==========================================================
-   LINKS
-   ========================================================== */
-
-a{
-
-    color:#0B5394;
-
-    text-decoration:none;
-
-}
-
-a:hover{
-
-    text-decoration:underline;
-
-}
-
-/* ==========================================================
-   BADGES
-   ========================================================== */
-
-.badge{
-
-    display:inline-block;
-
-    padding:6px 12px;
-
-    border-radius:20px;
-
-    font-size:12px;
-
-    font-weight:600;
-
-}
-
-.badge-verde{
-
-    background:#E8F5E9;
-
-    color:#2E7D32;
-
-}
-
-.badge-amarelo{
-
-    background:#FFF8E1;
-
-    color:#EF6C00;
-
-}
-
-.badge-vermelho{
-
-    background:#FDECEA;
-
-    color:#C62828;
-
-}
-
-.badge-azul{
-
-    background:#E3F2FD;
-
-    color:#1565C0;
-
-}
-
-/* ==========================================================
-   SCORE SCM
-   ========================================================== */
-
-.score-excelente{
-
-    color:#2E7D32;
-
-    font-weight:bold;
-
-}
-
-.score-bom{
-
-    color:#1565C0;
-
-    font-weight:bold;
-
-}
-
-.score-medio{
-
-    color:#F9A825;
-
-    font-weight:bold;
-
-}
-
-.score-baixo{
-
-    color:#C62828;
-
-    font-weight:bold;
-
-}
+st.caption(
+    "SCM_GOV • Versão 1.0.0 • Desenvolvido para SCM Reformas e Engenharia"
+)
