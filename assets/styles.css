@@ -1,31 +1,46 @@
 /* ============================================================
-   ESTILIZAÇÃO GERAL DO SCM_GOV
+   ESTILIZAÇÃO GERAL DO SCM_GOV - VERSÃO ESCURA
    ============================================================ */
 
-/* Fonte e Fundo */
+/* Fonte e Fundo Geral */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 
 html, body, [class*="st-"] {
     font-family: 'Inter', sans-serif;
 }
 
-/* Remover margens padrão indesejadas */
-.main .block-container {
-    padding-top: 2rem;
-    padding-bottom: 2rem;
+/* Sidebar Customizada - Escurecida */
+[data-testid="stSidebar"] {
+    background-color: #0f172a; /* Azul marinho muito escuro */
+    color: #f8fafc; /* Texto claro */
 }
 
-/* Melhoria no visual dos cartões (Success, Info, Warning) */
+/* Ajuste de texto dentro da Sidebar para ficar visível */
+[data-testid="stSidebar"] div, 
+[data-testid="stSidebar"] span, 
+[data-testid="stSidebar"] h1, 
+[data-testid="stSidebar"] h2, 
+[data-testid="stSidebar"] p {
+    color: #f1f5f9 !important;
+}
+
+/* Border da sidebar */
+[data-testid="stSidebar"] {
+    border-right: 1px solid #1e293b;
+}
+
+/* Melhoria no visual dos cartões (Success, Info, Warning) para modo escuro */
 .stSuccess, .stInfo, .stWarning {
     border-radius: 10px;
     padding: 1rem;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    border: 1px solid rgba(0,0,0,0.05);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    border: 1px solid #334155;
+    background-color: #1e293b !important;
 }
 
 /* Customização dos Headers */
 h1, h2, h3 {
-    color: #1e293b;
+    color: #e2e8f0; /* Texto claro para headers */
     font-weight: 700;
 }
 
@@ -33,45 +48,23 @@ h1, h2, h3 {
 [data-testid="stMetricValue"] {
     font-size: 2rem;
     font-weight: 700;
-    color: #0f172a;
+    color: #ffffff;
 }
 
 [data-testid="stMetricLabel"] {
     font-size: 0.9rem;
-    color: #64748b;
+    color: #94a3b8;
 }
 
-/* Sidebar Customizada */
-[data-testid="stSidebar"] {
-    background-color: #f8fafc;
-    border-right: 1px solid #e2e8f0;
-}
-
-[data-testid="stSidebar"] h1 {
-    font-size: 1.5rem;
-    color: #0f172a;
-}
-
-/* Botões e elementos interativos */
-.stButton > button {
-    border-radius: 8px;
-    transition: all 0.3s ease;
-}
-
-.stButton > button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-/* Rodapé centralizado */
+/* Rodapé */
 .stCaption {
     text-align: center;
-    color: #94a3b8;
+    color: #64748b;
     margin-top: 2rem;
 }
 
-/* Melhorar divisores */
+/* Divisores */
 hr {
-    border-top: 2px solid #e2e8f0;
+    border-top: 2px solid #334155;
     margin: 2rem 0;
 }
