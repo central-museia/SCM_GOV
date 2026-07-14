@@ -1,6 +1,10 @@
 from pathlib import Path
 import streamlit as st
 
+from api.endpoints import *
+
+url = BASE_URL + CONTRATACOES_PROPOSTA
+
 # -----------------------------------------------------------------------------
 # CONFIGURAÇÃO DA PÁGINA (SEMPRE PRIMEIRO)
 # -----------------------------------------------------------------------------
