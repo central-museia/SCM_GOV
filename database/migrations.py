@@ -1,3 +1,14 @@
-criar_banco()
+"""
+Migrations do banco de dados.
 
-atualizar_banco()
+Autor: SCM Engenharia
+"""
+
+from database.schema import criar_banco
+
+
+def inicializar_banco():
+    """
+    Inicializa o banco de dados.
+    """
+    criar_banco()
