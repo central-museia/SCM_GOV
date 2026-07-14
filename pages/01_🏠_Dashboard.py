@@ -2,8 +2,7 @@ import streamlit as st
 from datetime import datetime, timedelta
 from api.contratacoes import propostas_abertas
 from api.contratos import publicados
-from api.atas import consultar as consultar_atas
-
+from api.atas import consultar
 # ==========================================================
 # CONFIGURAÇÃO E DADOS
 # ==========================================================
