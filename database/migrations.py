@@ -1,5 +1,5 @@
 """
-Migrations do banco de dados.
+Migrations
 
 Autor: SCM Engenharia
 """
@@ -8,7 +8,5 @@ from database.schema import criar_banco
 
 
 def inicializar_banco():
-    """
-    Inicializa o banco de dados.
-    """
+
     criar_banco()
