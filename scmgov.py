@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.abspath(os.getcwd()))
 
 import streamlit as st
 from database.migrations import inicializar_banco
-from api.contratacoes import ContratacoesService
+from api.contratacoes import propostas_abertas, publicacoes, atualizacoes, consultar
 from services.estatistica_service import EstatisticaService
 
 # ==============================================================================
