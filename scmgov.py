@@ -9,12 +9,14 @@ import os
 from pathlib import Path
 from datetime import datetime, timedelta
 
-# Adiciona o caminho absoluto da pasta raiz
+# Garante que o Python encontre as pastas locais
 sys.path.insert(0, os.path.abspath(os.getcwd()))
 
 import streamlit as st
 from database.migrations import inicializar_banco
-from api.contratacoes import propostas_abertas
+
+# Importando exatamente as funções que você definiu em api/contratacoes.py
+from api.contratacoes import propostas_abertas, publicacoes, atualizacoes, consultar
 from services.estatistica_service import EstatisticaService
 
 # ==============================================================================
@@ -30,28 +32,24 @@ st.set_page_config(
 inicializar_banco()
 
 # ==============================================================================
-# LÓGICA DE DADOS (Integração Direta)
+# LÓGICA DE DADOS (Usando suas funções exatas)
 # ==============================================================================
 @st.cache_data(ttl=3600)
 def carregar_dados_reais():
-    # Define o período da busca (ex: últimos 30 dias)
+    # Período de busca para alimentar o dashboard
     hoje = datetime.now()
     inicio = (hoje - timedelta(days=30)).strftime("%Y%m%d")
     fim = hoje.strftime("%Y%m%d")
     
-    # Busca dados usando a função importada corretamente
+    # Chamando sua função exata
     dados_brutos = propostas_abertas(data_inicial=inicio, data_final=fim)
     
-    # Processa via EstatisticaService
+    # Processa via seu EstatisticaService
     if dados_brutos:
         return EstatisticaService.resumo(dados_brutos)
     return None
 
-resumo = carregar_dados_reais()
-
-# Fallback
-if not resumo:
-    resumo = {"total": 0, "oportunidades": 0, "orgaos": {}, "score_medio": 0}
+resumo = carregar_dados_reais() or {"total": 0, "oportunidades": 0, "orgaos": {}, "score_medio": 0}
 
 # ==============================================================================
 # CARREGAR CSS
@@ -65,7 +63,7 @@ def carregar_css():
 carregar_css()
 
 # ==============================================================================
-# CABEÇALHO
+# CABEÇALHO E INTERFACE
 # ==============================================================================
 st.markdown("<div class='titulo'>🏛️ SCM_GOV</div>", unsafe_allow_html=True)
 st.markdown("<div class='subtitulo'>Radar Estratégico de Licitações Públicas</div>", unsafe_allow_html=True)
@@ -73,7 +71,7 @@ st.write("Identifique rapidamente quais licitações abertas merecem que a SCM R
 st.divider()
 
 # ==============================================================================
-# INDICADORES (Dinâmicos)
+# INDICADORES
 # ==============================================================================
 col1, col2, col3, col4 = st.columns(4)
 
