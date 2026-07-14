@@ -7,13 +7,14 @@ Autor: Deise Maria de Oliveira a serviço da SCM Engenharia
 import sys
 import os
 from pathlib import Path
+from datetime import datetime, timedelta
 
-# Adiciona o caminho absoluto da pasta raiz explicitamente
+# Adiciona o caminho absoluto da pasta raiz
 sys.path.insert(0, os.path.abspath(os.getcwd()))
 
 import streamlit as st
 from database.migrations import inicializar_banco
-from api.contratacoes import propostas_abertas, publicacoes, atualizacoes, consultar
+from api.contratacoes import propostas_abertas
 from services.estatistica_service import EstatisticaService
 
 # ==============================================================================
@@ -29,21 +30,26 @@ st.set_page_config(
 inicializar_banco()
 
 # ==============================================================================
-# LÓGICA DE DADOS (Integração API + Service)
+# LÓGICA DE DADOS (Integração Direta)
 # ==============================================================================
 @st.cache_data(ttl=3600)
 def carregar_dados_reais():
-    # 1. Busca os dados brutos da API
-    service_api = ContratacoesService()
-    dados_brutos = service_api.buscar_licitacoes_abertas() # Ajuste o nome do método conforme seu arquivo
+    # Define o período da busca (ex: últimos 30 dias)
+    hoje = datetime.now()
+    inicio = (hoje - timedelta(days=30)).strftime("%Y%m%d")
+    fim = hoje.strftime("%Y%m%d")
     
-    # 2. Processa via EstatisticaService
-    return EstatisticaService.resumo(dados_brutos) if dados_brutos else None
+    # Busca dados usando a função importada corretamente
+    dados_brutos = propostas_abertas(data_inicial=inicio, data_final=fim)
+    
+    # Processa via EstatisticaService
+    if dados_brutos:
+        return EstatisticaService.resumo(dados_brutos)
+    return None
 
-# Carrega os dados processados
 resumo = carregar_dados_reais()
 
-# Fallback para caso a API retorne vazio
+# Fallback
 if not resumo:
     resumo = {"total": 0, "oportunidades": 0, "orgaos": {}, "score_medio": 0}
 
@@ -76,13 +82,9 @@ with col1:
 with col2:
     st.metric("⭐ Oportunidades", resumo.get("oportunidades", 0))
 with col3:
-    # Mostra o total de órgãos monitorados (tamanho do dicionário)
     st.metric("🏛️ Órgãos", len(resumo.get("orgaos", {})))
 with col4:
     st.metric("📅 Score Médio", resumo.get("score_medio", 0))
-
-# ==============================================================================
-# ... (O restante do seu código permanece igual)
 
 # ==============================================================================
 # VISÃO GERAL
