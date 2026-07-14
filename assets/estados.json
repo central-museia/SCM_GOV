@@ -1,1 +1,35 @@
-
+[
+    {
+        "id": 1,
+        "nome": "Rio de Janeiro",
+        "municipios": [
+            "Rio de Janeiro"
+        ]
+    },
+    {
+        "id": 2,
+        "nome": "Niterói",
+        "municipios": [
+            "Niterói"
+        ]
+    },
+    {
+        "id": 3,
+        "nome": "Baixada Fluminense",
+        "municipios": [
+            "Duque de Caxias",
+            "Nova Iguaçu",
+            "São João de Meriti",
+            "Belford Roxo",
+            "Nilópolis",
+            "Mesquita",
+            "Queimados",
+            "Japeri",
+            "Magé",
+            "Guapimirim",
+            "Seropédica",
+            "Paracambi",
+            "Itaguaí"
+        ]
+    }
+]
