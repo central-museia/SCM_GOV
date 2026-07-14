@@ -1,28 +1,33 @@
 from pathlib import Path
 import streamlit as st
 
+# -----------------------------------------------------------------------------
+# CONFIGURAÇÃO DA PÁGINA (SEMPRE PRIMEIRO)
+# -----------------------------------------------------------------------------
+
+st.set_page_config(
+    page_title="SCM_GOV",
+    page_icon="assets/favicon.ico",   # ou "🏛️" enquanto não tiver o favicon
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# -----------------------------------------------------------------------------
+# CARREGAR CSS
+# -----------------------------------------------------------------------------
+
 def carregar_css():
     css = Path("assets/styles.css").read_text(encoding="utf-8")
     st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
 carregar_css()
 
-st.set_page_config(
-    page_title="SCM_GOV",
-    page_icon="assets/favicon.ico",
-    layout="wide"
-)
-
 # -----------------------------------------------------------------------------
-# CONFIGURAÇÃO DA PÁGINA
+# A PARTIR DAQUI VEM O RESTANTE DO CÓDIGO
 # -----------------------------------------------------------------------------
 
-st.set_page_config(
-    page_title="SCM_GOV",
-    page_icon="🏛️",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.title("🏛️ SCM_GOV")
+st.write("Plataforma de Inteligência para Licitações Públicas")
 
 # -----------------------------------------------------------------------------
 # CSS
