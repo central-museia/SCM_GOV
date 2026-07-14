@@ -1,7 +1,12 @@
-configuracoes
+from database.connection import conectar
 
-palavras_chave
 
-cnaes
+def criar_banco():
+    conn = conectar()
 
-cache
+    cursor = conn.cursor()
+
+    # criação das tabelas
+
+    conn.commit()
+    conn.close()
