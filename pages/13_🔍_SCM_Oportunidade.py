@@ -1,7 +1,8 @@
 import sys
 import os
+from datetime import datetime, timedelta
 
-# Força o Python a olhar na raiz do projeto, garantindo que ele ache a pasta 'services'
+# Força o Python a olhar na raiz do projeto
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import streamlit as st
@@ -9,55 +10,49 @@ import pandas as pd
 from api.contratacoes import propostas_abertas
 from services.filtro_service import filtrar_por_especificacoes_scm
 
+st.set_page_config(page_title="Oportunidades SCM", layout="wide")
+
 st.title("⭐ Oportunidades para Atuação")
 
 @st.cache_data(ttl=3600)
-def carregar_dados():
-    # 1. Busca os dados brutos da API
+def carregar_oportunidades_abertas():
+    # Período de 30 dias
     hoje = datetime.now()
     data_inicial = (hoje - timedelta(days=30)).strftime("%Y%m%d")
     data_final = hoje.strftime("%Y%m%d")
     
+    # Busca da API
     resposta = propostas_abertas(data_inicial=data_inicial, data_final=data_final, tamanho_pagina=100)
-    dados_brutos = resposta.get("data", []) if resposta.get("success") else []
+    dados = resposta.get("data", []) if resposta.get("success") else []
     
-    # 2. VALIDAÇÃO MESTRE: Somente o que está de acordo com a empresa passa
-    return filtro_service.filtrar_por_especificacoes_scm(dados_brutos)
+    # Aplica o filtro mestre (Validação SCM)
+    return filtrar_por_especificacoes_scm(dados)
 
-# Executa o fluxo de validação
-oportunidades = carregar_dados()
+# Carrega e exibe
+oportunidades = carregar_oportunidades_abertas()
 
 if not oportunidades:
     st.info("Nenhuma oportunidade encontrada que atenda aos critérios da SCM.")
 else:
     df = pd.DataFrame(oportunidades)
     
-    # Mapeamento para exibição
-    colunas_exibicao = {
+    # Colunas essenciais para decisão rápida
+    colunas_map = {
         "objeto": "Objeto",
         "nomeOrgao": "Órgão",
         "municipioNome": "Município",
-        "modalidadeNome": "Modalidade",
-        "valorEstimado": "Preço Estimado",
-        "dataAberturaProposta": "Data Abertura"
+        "valorEstimado": "Valor",
+        "dataAberturaProposta": "Abertura"
     }
     
-    # Filtra e renomeia
-    df_exibicao = df[[c for c in colunas_exibicao.keys() if c in df.columns]].copy()
-    df_exibicao = df_exibicao.rename(columns=colunas_exibicao)
-    df_exibicao.insert(0, "Selecionar", False)
-
-    # Exibição
-    df_editado = st.data_editor(
+    # Filtra apenas colunas existentes
+    df_exibicao = df[[c for c in colunas_map.keys() if c in df.columns]].rename(columns=colunas_map)
+    
+    # Exibe tabela rápida
+    st.dataframe(
         df_exibicao,
-        column_config={"Selecionar": st.column_config.CheckboxColumn(default=False)},
         use_container_width=True,
         hide_index=True
     )
-
-    if st.button("Gerar Plano de Atuação"):
-        selecionadas = df_editado[df_editado["Selecionar"] == True]
-        if not selecionadas.empty:
-            st.success(f"Análise iniciada para {len(selecionadas)} licitações.")
-        else:
-            st.warning("Selecione pelo menos uma licitação.")
+    
+    st.write(f"Total de licitações validadas para a SCM: **{len(df_exibicao)}**")
