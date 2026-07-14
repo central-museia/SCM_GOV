@@ -7,247 +7,406 @@ Autor: SCM Engenharia
 """
 
 from pathlib import Path
-
 import streamlit as st
 
-from database.migrations import inicializar_banco
 
-# ==============================================================================
+# ============================================================
 # CONFIGURAÇÃO DA PÁGINA
-# ==============================================================================
+# ============================================================
+
+favicon = Path("assets/favicon.ico")
 
 st.set_page_config(
     page_title="SCM_GOV",
-    page_icon="assets/favicon.ico",
+    page_icon=str(favicon) if favicon.exists() else "🏛️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# ==============================================================================
-# INICIALIZAÇÃO
-# ==============================================================================
 
-inicializar_banco()
+# ============================================================
+# IMPORTAÇÃO BANCO
+# ============================================================
 
-# ==============================================================================
-# CSS
-# ==============================================================================
+try:
+    from database.migrations import inicializar_banco
+
+    inicializar_banco()
+
+except Exception as e:
+
+    st.warning(
+        f"""
+        Banco ainda não inicializado.
+
+        Sistema continuará funcionando em modo demonstração.
+
+        Detalhe técnico:
+        {e}
+        """
+    )
+
+
+# ============================================================
+# CARREGAMENTO CSS
+# ============================================================
+
 
 def carregar_css():
 
-    css = Path("assets/styles.css")
+    arquivo_css = Path("assets/styles.css")
 
-    if css.exists():
+    if arquivo_css.exists():
+
+        css = arquivo_css.read_text(
+            encoding="utf-8"
+        )
 
         st.markdown(
-            f"<style>{css.read_text(encoding='utf-8')}</style>",
+            f"""
+            <style>
+            {css}
+            </style>
+            """,
             unsafe_allow_html=True
         )
 
 
 carregar_css()
 
-# ==============================================================================
+
+
+# ============================================================
 # CABEÇALHO
-# ==============================================================================
+# ============================================================
+
 
 st.title("🏛️ SCM_GOV")
 
-st.caption("Radar Estratégico de Licitações Públicas")
+st.caption(
+    "Radar Estratégico de Licitações Públicas"
+)
+
 
 st.write(
     """
-Identifique rapidamente quais licitações abertas merecem que a
-SCM Reformas e Engenharia invista tempo na preparação de uma proposta.
+Sistema inteligente desenvolvido para apoiar a SCM Reformas e Engenharia
+na identificação de oportunidades em licitações públicas.
+
+Transforma dados públicos em inteligência estratégica,
+permitindo decidir onde investir tempo e recursos.
 """
 )
 
+
 st.divider()
 
-# ==============================================================================
-# INDICADORES
-# ==============================================================================
+
+
+# ============================================================
+# INDICADORES PRINCIPAIS
+# ============================================================
+
+
+st.header("📌 Indicadores")
+
 
 col1, col2, col3, col4 = st.columns(4)
 
+
 with col1:
+
     st.metric(
-        "🔍 Licitações Abertas",
-        "0"
+        label="🔍 Licitações Abertas",
+        value="0"
     )
+
 
 with col2:
+
     st.metric(
-        "⭐ Oportunidades",
-        "0"
+        label="⭐ Oportunidades SCM",
+        value="0"
     )
+
 
 with col3:
+
     st.metric(
-        "🏛️ Órgãos",
-        "0"
+        label="🏛️ Órgãos Monitorados",
+        value="0"
     )
+
 
 with col4:
+
     st.metric(
-        "📅 Atas Vigentes",
-        "0"
+        label="📅 Atas Vigentes",
+        value="0"
     )
 
-# ==============================================================================
+
+
+# ============================================================
 # VISÃO GERAL
-# ==============================================================================
+# ============================================================
+
 
 st.header("📊 Visão Geral")
 
+
 st.info(
-    """
-O SCM_GOV consulta automaticamente os dados oficiais do Portal Nacional de
-Contratações Públicas (PNCP) e organiza as oportunidades para apoiar
-a tomada de decisão da SCM.
+"""
+## Como funciona o SCM_GOV
 
-### Objetivo
+O sistema coleta informações oficiais de compras públicas,
+organiza os dados e aplica filtros estratégicos.
 
-Responder uma única pergunta:
+A pergunta principal:
 
-**Quais licitações abertas merecem que a SCM invista tempo na preparação de uma proposta?**
+> Quais licitações realmente merecem o esforço da SCM?
+
+A plataforma considera:
+
+✔ CNAEs da empresa  
+✔ localização  
+✔ modalidade da contratação  
+✔ objeto da licitação  
+✔ valor estimado  
+✔ prazo  
+✔ histórico do órgão  
 """
 )
 
-# ==============================================================================
+
+
+# ============================================================
 # MÓDULOS
-# ==============================================================================
+# ============================================================
+
 
 st.header("🚀 Módulos da Plataforma")
 
+
 c1, c2, c3 = st.columns(3)
+
+
 
 with c1:
 
+
     st.success(
-        """
+"""
 ### 🔍 Radar de Licitações
 
-Consulta automática das oportunidades abertas.
+Busca automática de oportunidades abertas.
 """
-    )
+)
+
 
     st.success(
-        """
-### ⭐ Oportunidades
-
-Classificação utilizando o Score SCM.
 """
-    )
+### ⭐ Score SCM
+
+Classificação automática das oportunidades.
+"""
+)
+
 
     st.success(
-        """
-### 📑 Detalhes
-
-Análise completa da contratação.
 """
-    )
+### 📑 Análise da Licitação
+
+Detalhes completos para decisão.
+"""
+)
+
+
 
 with c2:
 
+
     st.info(
-        """
+"""
 ### 🏛️ Órgãos
 
-Órgãos públicos monitorados.
+Monitoramento dos compradores públicos.
 """
-    )
+)
+
 
     st.info(
-        """
+"""
 ### 📅 Atas
 
-Atas de Registro de Preço.
+Controle de atas de registro de preço.
 """
-    )
+)
+
 
     st.info(
-        """
+"""
 ### 📋 Contratos
 
-Consulta de contratos publicados.
+Histórico de contratações.
 """
-    )
+)
+
+
 
 with c3:
 
+
     st.warning(
-        """
-### 📊 Estatísticas
+"""
+### 📊 Inteligência
 
 Indicadores estratégicos.
 """
-    )
+)
+
 
     st.warning(
-        """
+"""
 ### ⚙️ Configurações
 
-Preferências da plataforma.
+Parâmetros da SCM.
 """
-    )
+)
+
 
     st.warning(
-        """
-### 🤖 Inteligência SCM
-
-Filtros inteligentes, Score SCM e IA.
 """
-    )
+### 🤖 IA SCM
 
-# ==============================================================================
+Análises inteligentes.
+"""
+)
+
+
+
+# ============================================================
 # ROADMAP
-# ==============================================================================
+# ============================================================
+
 
 st.header("🛣️ Roadmap")
 
-st.progress(20)
 
-st.markdown("""
+st.progress(
+    20
+)
 
-✅ Estrutura do projeto
 
-🔄 Integração com API do PNCP
+roadmap = """
 
-🔄 Radar de Licitações
+### Concluído
+
+✅ Estrutura inicial do projeto
+
+
+### Em desenvolvimento
+
+🔄 Integração PNCP
+
+🔄 Banco de dados
+
+🔄 Radar automático
 
 🔄 Score SCM
 
-🔄 Dashboard Inteligente
+
+### Próximas versões
+
+⏳ Dashboard executivo
 
 ⏳ Inteligência Artificial
 
-""")
+⏳ Recomendações automáticas
 
-# ==============================================================================
-# INFORMAÇÕES
-# ==============================================================================
+
+"""
+
+
+st.markdown(
+    roadmap
+)
+
+
+
+# ============================================================
+# SOBRE
+# ============================================================
+
 
 st.header("📌 Sobre o Projeto")
 
-st.write("""
 
-O SCM_GOV é um sistema desenvolvido exclusivamente para a SCM Reformas e
-Engenharia.
+st.write(
+"""
+O SCM_GOV foi criado exclusivamente para a SCM Reformas e Engenharia.
 
-Seu objetivo é transformar os dados públicos do PNCP em inteligência de
-negócio, reduzindo o tempo gasto na busca por oportunidades e permitindo
-que a equipe concentre seus esforços apenas nas licitações com maior
-potencial de retorno.
+O objetivo é transformar dados públicos de licitações em uma ferramenta
+de inteligência comercial, reduzindo o tempo de busca e aumentando a
+capacidade de identificar oportunidades aderentes ao perfil da empresa.
 
-""")
+"""
+)
 
-# ==============================================================================
+
+
+# ============================================================
+# SIDEBAR
+# ============================================================
+
+
+with st.sidebar:
+
+
+    st.image(
+        "assets/logo.png",
+        width=180
+    ) if Path("assets/logo.png").exists() else None
+
+
+    st.title(
+        "SCM_GOV"
+    )
+
+
+    st.markdown(
+"""
+### Menu
+
+🏠 Início
+
+🔍 Licitações
+
+⭐ Oportunidades
+
+🏛️ Órgãos
+
+📊 Dashboard
+
+⚙️ Configurações
+
+"""
+)
+
+
+
+# ============================================================
 # RODAPÉ
-# ==============================================================================
+# ============================================================
+
 
 st.divider()
 
+
 st.caption(
-    "SCM_GOV • Versão 1.0.0 • Desenvolvido para SCM Reformas e Engenharia"
+"""
+SCM_GOV • Versão 1.0.0
+
+SCM Reformas e Engenharia
+"""
 )
