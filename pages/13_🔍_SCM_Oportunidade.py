@@ -3,7 +3,7 @@ import pandas as pd
 import json
 from datetime import datetime, timedelta
 from api.contratacoes import propostas_abertas
-from services.filtro_service import FiltroService
+from services.filtro_service import filtrar_por_especificacoes_scm
 
 st.set_page_config(page_title="Oportunidades SCM", layout="wide")
 
