@@ -2,7 +2,8 @@ import streamlit as st
 from datetime import datetime, timedelta
 from api.contratacoes import propostas_abertas
 from api.contratos import publicados
-from api.atas import consultar
+from api.atas import consultar  # Importado conforme sua estrutura
+
 # ==========================================================
 # CONFIGURAÇÃO E DADOS
 # ==========================================================
@@ -19,15 +20,18 @@ data_final = hoje.strftime("%Y%m%d")
 # Carregar dados (simulando cache)
 @st.cache_data(ttl=3600)
 def carregar_kpis():
-    # Chamadas às funções já criadas
+    # Chamadas às funções corrigidas
     licitacoes = propostas_abertas(data_inicial=data_inicial, data_final=data_final)
     contratos = publicados(data_inicial=data_inicial, data_final=data_final)
-    atas = consultar_atas(data_inicial=data_inicial, data_final=data_final)
+    
+    # AQUI ESTAVA O ERRO: Chamando 'consultar' (o nome importado)
+    atas = consultar(data_inicial=data_inicial, data_final=data_final)
     
     # Extração simples para exibição nos KPIs
-    total_lic = len(licitacoes["data"]) if licitacoes.get("success") else 0
-    total_con = len(contratos["data"]) if contratos.get("success") else 0
-    total_atas = len(atas["data"]) if atas.get("success") else 0
+    # Nota: A API PNCP retorna sucesso/data conforme definido no seu client.py
+    total_lic = len(licitacoes.get("data", [])) if licitacoes.get("success") else 0
+    total_con = len(contratos.get("data", [])) if contratos.get("success") else 0
+    total_atas = len(atas.get("data", [])) if atas.get("success") else 0
     
     return total_lic, total_con, total_atas
 
@@ -45,7 +49,7 @@ with col2:
 with col3:
     st.metric("Contratações", total_con)
 with col4:
-    st.metric("Valor Total", "R$ 0,00") # Aguardando Parser de valor
+    st.metric("Valor Total", "R$ 0,00") 
 
 st.divider()
 
