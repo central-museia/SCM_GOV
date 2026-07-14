@@ -1,9 +1,7 @@
 """
 SCM_GOV
-
 Radar Estratégico de Licitações Públicas
-
-Autor: SCM Engenharia
+Autor: Deise Maria de Oliveira a serviço da SCM Engenharia
 """
 
 from pathlib import Path
@@ -15,17 +13,12 @@ from services.estatistica_service import EstatisticaService
 # ==============================================================================
 # CONFIGURAÇÃO DA PÁGINA
 # ==============================================================================
-
 st.set_page_config(
     page_title="SCM_GOV",
     page_icon="assets/favicon.ico",
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
-# ==============================================================================
-# INICIALIZAÇÃO DO SISTEMA
-# ==============================================================================
 
 inicializar_banco()
 
@@ -51,42 +44,20 @@ if not resumo:
 # ==============================================================================
 # CARREGAR CSS
 # ==============================================================================
-
 def carregar_css():
     css_path = Path("assets/styles.css")
-
     if css_path.exists():
         css = css_path.read_text(encoding="utf-8")
         st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
-
 
 carregar_css()
 
 # ==============================================================================
 # CABEÇALHO
 # ==============================================================================
-
-st.markdown(
-    "<div class='titulo'>🏛️ SCM_GOV</div>",
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    """
-<div class='subtitulo'>
-Radar Estratégico de Licitações Públicas
-</div>
-""",
-    unsafe_allow_html=True
-)
-
-st.write(
-    """
-Identifique rapidamente quais licitações abertas merecem que a
-SCM Reformas e Engenharia invista tempo na preparação de uma proposta.
-"""
-)
-
+st.markdown("<div class='titulo'>🏛️ SCM_GOV</div>", unsafe_allow_html=True)
+st.markdown("<div class='subtitulo'>Radar Estratégico de Licitações Públicas</div>", unsafe_allow_html=True)
+st.write("Identifique rapidamente quais licitações abertas merecem que a SCM Reformas e Engenharia invista tempo na preparação de uma proposta.")
 st.divider()
 
 # ==============================================================================
@@ -103,6 +74,9 @@ with col3:
     st.metric("🏛️ Órgãos", len(resumo.get("orgaos", {})))
 with col4:
     st.metric("📅 Score Médio", resumo.get("score_medio", 0))
+
+# ==============================================================================
+# ... (O restante do seu código permanece igual)
 
 # ==============================================================================
 # VISÃO GERAL
