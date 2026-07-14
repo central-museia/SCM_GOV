@@ -6,6 +6,10 @@ Autor: Deise Maria de Oliveira a serviço da SCM Engenharia
 
 from pathlib import Path
 import streamlit as st
+
+# Adiciona o diretório atual ao path do Python
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from database.migrations import inicializar_banco
 from api.contratacoes import ContratacoesService
 from services.estatistica_service import EstatisticaService
