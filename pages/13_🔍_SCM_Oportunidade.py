@@ -7,7 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import streamlit as st
 import pandas as pd
 from api.contratacoes import propostas_abertas
-from services.filtro_service import filtrar_por_especificacoes_scm # Importa direto a função
+from services.filtro_service import filtrar_por_especificacoes_scm
 
 st.title("⭐ Oportunidades para Atuação")
 
