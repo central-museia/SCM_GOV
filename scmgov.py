@@ -8,8 +8,8 @@ import sys
 import os
 from pathlib import Path
 
-# Adiciona o diretório raiz ao path do Python para encontrar as pastas api, services, etc.
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Adiciona o caminho absoluto da pasta raiz explicitamente
+sys.path.insert(0, os.path.abspath(os.getcwd()))
 
 import streamlit as st
 from database.migrations import inicializar_banco
