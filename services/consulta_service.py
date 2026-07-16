@@ -73,7 +73,10 @@ class ConsultaService:
 import requests
 import pandas as pd
 
-BASE_URL = "https://pncp.gov.br/api/consulta/v1"
+BASE_URL = "https://pncp.gov.br/api/consulta"
+
+CONTRATACOES_PUBLICACAO = "/v1/contratacoes/publicacao"
+CONTRATACOES_PROPOSTA = "/v1/contratacoes/proposta"
 
 
 def consultar_licitacoes(
