@@ -1,58 +1,82 @@
-import sys
-import os
-from datetime import datetime, timedelta
-
-# Força o Python a olhar na raiz do projeto
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+"""
+SCM_GOV
+Licitações em Aberto
+"""
 
 import streamlit as st
 import pandas as pd
-from api.contratacoes import propostas_abertas
-from services.filtro_service import filtrar_por_especificacoes_scm
 
-st.set_page_config(page_title="Oportunidades SCM", layout="wide")
+from services.consulta_service import consultar_licitacoes
 
-st.title("⭐ Oportunidades para Atuação")
+# ==============================================================================
+# CONFIGURAÇÃO
+# ==============================================================================
 
-@st.cache_data(ttl=3600)
-def carregar_oportunidades_abertas():
-    # Período de 30 dias
-    hoje = datetime.now()
-    data_inicial = (hoje - timedelta(days=30)).strftime("%Y%m%d")
-    data_final = hoje.strftime("%Y%m%d")
-    
-    # Busca da API
-    resposta = propostas_abertas(data_inicial=data_inicial, data_final=data_final, tamanho_pagina=100)
-    dados = resposta.get("data", []) if resposta.get("success") else []
-    
-    # Aplica o filtro mestre (Validação SCM)
-    return filtrar_por_especificacoes_scm(dados)
+st.set_page_config(
+    page_title="SCM_GOV | Licitações",
+    page_icon="📋",
+    layout="wide"
+)
 
-# Carrega e exibe
-oportunidades = carregar_oportunidades_abertas()
+st.title("📋 Licitações em Aberto")
 
-if not oportunidades:
-    st.info("Nenhuma oportunidade encontrada que atenda aos critérios da SCM.")
-else:
-    df = pd.DataFrame(oportunidades)
-    
-    # Colunas essenciais para decisão rápida
-    colunas_map = {
-        "objeto": "Objeto",
-        "nomeOrgao": "Órgão",
-        "municipioNome": "Município",
-        "valorEstimado": "Valor",
-        "dataAberturaProposta": "Abertura"
-    }
-    
-    # Filtra apenas colunas existentes
-    df_exibicao = df[[c for c in colunas_map.keys() if c in df.columns]].rename(columns=colunas_map)
-    
-    # Exibe tabela rápida
-    st.dataframe(
-        df_exibicao,
-        use_container_width=True,
-        hide_index=True
+st.caption("Licitações abertas encontradas no Portal Nacional de Contratações Públicas")
+
+st.divider()
+
+# ==============================================================================
+# FILTROS
+# ==============================================================================
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    estado = st.selectbox(
+        "Estado",
+        [
+            "RJ"
+        ]
     )
-    
-    st.write(f"Total de licitações validadas para a SCM: **{len(df_exibicao)}**")
+
+with col2:
+    palavra = st.text_input(
+        "Palavra-chave",
+        placeholder="ex: reforma"
+    )
+
+with col3:
+    quantidade = st.number_input(
+        "Quantidade",
+        min_value=10,
+        max_value=500,
+        value=50,
+        step=10
+    )
+
+# ==============================================================================
+# BOTÃO
+# ==============================================================================
+
+if st.button("🔍 Buscar Licitações", use_container_width=True):
+
+    with st.spinner("Consultando PNCP..."):
+
+        df = consultar_licitacoes(
+            estado=estado,
+            palavra_chave=palavra,
+            quantidade=quantidade
+        )
+
+    if df.empty:
+
+        st.warning("Nenhuma licitação encontrada.")
+
+    else:
+
+        st.success(f"{len(df)} licitações encontradas.")
+
+        st.dataframe(
+            df,
+            use_container_width=True,
+            hide_index=True
+        )
