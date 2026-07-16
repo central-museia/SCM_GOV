@@ -69,3 +69,41 @@ class ConsultaService:
             pagina=pagina,
             tamanho_pagina=tamanho_pagina
         )
+
+import pandas as pd
+
+
+def consultar_licitacoes(
+    estado,
+    palavra_chave,
+    quantidade
+):
+
+    # EXEMPLO
+    # depois substituímos pela chamada da API PNCP
+
+    dados = [
+
+        {
+            "Objeto": "Reforma Predial",
+            "Órgão": "Prefeitura do Rio",
+            "Município": "Rio de Janeiro",
+            "UF": "RJ",
+            "Valor": 1250000,
+            "Data Abertura": "15/07/2026",
+            "Situação": "Aberta"
+        },
+
+        {
+            "Objeto": "Manutenção Civil",
+            "Órgão": "UERJ",
+            "Município": "Rio de Janeiro",
+            "UF": "RJ",
+            "Valor": 840000,
+            "Data Abertura": "20/07/2026",
+            "Situação": "Aberta"
+        }
+
+    ]
+
+    return pd.DataFrame(dados)
