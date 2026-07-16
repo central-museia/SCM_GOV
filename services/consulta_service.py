@@ -70,40 +70,67 @@ class ConsultaService:
             tamanho_pagina=tamanho_pagina
         )
 
+import requests
 import pandas as pd
+
+BASE_URL = "https://pncp.gov.br/api/consulta/v1"
 
 
 def consultar_licitacoes(
-    estado,
-    palavra_chave,
-    quantidade
+    pagina=1,
+    tamanho=50,
+    uf="RJ",
+    palavra=""
 ):
 
-    # EXEMPLO
-    # depois substituímos pela chamada da API PNCP
+    endpoint = f"{BASE_URL}/contratacoes/publicacao"
 
-    dados = [
+    params = {
+        "pagina": pagina,
+        "tamanhoPagina": tamanho,
+        "uf": uf,
+        "status": "RECEBENDO_PROPOSTA"
+    }
 
-        {
-            "Objeto": "Reforma Predial",
-            "Órgão": "Prefeitura do Rio",
-            "Município": "Rio de Janeiro",
-            "UF": "RJ",
-            "Valor": 1250000,
-            "Data Abertura": "15/07/2026",
-            "Situação": "Aberta"
-        },
+    if palavra:
+        params["objeto"] = palavra
 
-        {
-            "Objeto": "Manutenção Civil",
-            "Órgão": "UERJ",
-            "Município": "Rio de Janeiro",
-            "UF": "RJ",
-            "Valor": 840000,
-            "Data Abertura": "20/07/2026",
-            "Situação": "Aberta"
-        }
+    response = requests.get(
+        endpoint,
+        params=params,
+        timeout=30
+    )
 
-    ]
+    response.raise_for_status()
 
-    return pd.DataFrame(dados)
+    dados = response.json()
+
+    registros = []
+
+    for item in dados.get("data", []):
+
+        registros.append({
+
+            "Número": item.get("numeroControlePNCP"),
+
+            "Objeto": item.get("objetoCompra"),
+
+            "Órgão": item.get("orgaoEntidade", {}).get("razaoSocial"),
+
+            "Município": item.get("unidadeOrgao", {}).get("municipioNome"),
+
+            "UF": item.get("unidadeOrgao", {}).get("ufSigla"),
+
+            "Modalidade": item.get("modalidadeNome"),
+
+            "Valor Estimado": item.get("valorTotalEstimado"),
+
+            "Data Publicação": item.get("dataPublicacaoPncp"),
+
+            "Encerramento": item.get("dataEncerramentoProposta"),
+
+            "Link": item.get("linkSistemaOrigem")
+
+        })
+
+    return pd.DataFrame(registros)
