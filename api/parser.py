@@ -186,3 +186,39 @@ class PNCPParser:
             PNCPParser.parse_contratacao(item)
             for item in itens
         ]
+
+# ==========================================================
+    # CONTRATAÇÃO / PROPOSTA
+    # ==========================================================
+
+    @staticmethod
+    def parse_contratacao(item):
+
+        orgao = item.get("orgaoEntidade", {}) or {}
+        unidade = item.get("unidadeOrgao", {}) or {}
+
+        return {
+            "numero_pncp": item.get("numeroControlePNCP"),
+            "objeto": item.get("objetoCompra", "") or "",
+            "orgao": orgao.get("razaoSocial", "") or "",
+            "cnpj": orgao.get("cnpj", ""),
+            "municipio": unidade.get("municipioNome", "") or "",
+            "uf": unidade.get("ufSigla", "") or "",
+            "modalidade": item.get("modalidadeNome", "") or "",
+            "valor": item.get("valorTotalEstimado") or 0,
+            "data_publicacao": PNCPParser.formatar_data(
+                item.get("dataPublicacaoPncp")
+            ),
+            "encerramento_proposta": item.get("dataEncerramentoProposta"),
+            "cancelado": bool(item.get("dataCancelamento")),
+            "recebimento_proposta": True,
+            "link": item.get("linkSistemaOrigem", "")
+        }
+
+    @staticmethod
+    def parse_contratacoes(itens):
+
+        return [
+            PNCPParser.parse_contratacao(item)
+            for item in itens
+        ]
