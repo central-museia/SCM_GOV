@@ -8,6 +8,10 @@ Autor: SCM Engenharia
 
 import streamlit as st
 
+from services.score_service import ScoreService
+from services.exportacao_service import ExportacaoService
+from api.parser import PNCPParser
+
 # ==============================================================================
 # CONFIGURAÇÃO
 # ==============================================================================
@@ -31,6 +35,24 @@ st.caption(
 st.divider()
 
 # ==============================================================================
+# VALIDAÇÃO — precisa vir de "Oportunidades" com um item selecionado
+# ==============================================================================
+
+licitacao = st.session_state.get("licitacao_selecionada")
+
+if not licitacao:
+
+    st.warning(
+        "Nenhuma licitação selecionada. Volte para a página de "
+        "Oportunidades e clique em '📑 Ver Detalhes' em um item da lista."
+    )
+
+    if st.button("⬅️ Ir para Oportunidades"):
+        st.switch_page("pages/03_⭐_Oportunidades.py")
+
+    st.stop()
+
+# ==============================================================================
 # DADOS GERAIS
 # ==============================================================================
 
@@ -42,25 +64,25 @@ with col1:
 
     st.text_input(
         "Número da Licitação",
-        value="",
+        value=licitacao.get("numero_pncp", ""),
         disabled=True
     )
 
     st.text_input(
         "Órgão",
-        value="",
+        value=licitacao.get("orgao", ""),
         disabled=True
     )
 
     st.text_input(
         "Município",
-        value="",
+        value=licitacao.get("municipio", ""),
         disabled=True
     )
 
     st.text_input(
         "Modalidade",
-        value="",
+        value=licitacao.get("modalidade", ""),
         disabled=True
     )
 
@@ -68,25 +90,25 @@ with col2:
 
     st.text_input(
         "Data de Publicação",
-        value="",
+        value=PNCPParser.formatar_data(licitacao.get("data_publicacao", "")) or licitacao.get("data_publicacao", ""),
         disabled=True
     )
 
     st.text_input(
         "Prazo Final",
-        value="",
+        value=PNCPParser.formatar_data(licitacao.get("encerramento_proposta", "")) or licitacao.get("encerramento_proposta", ""),
         disabled=True
     )
 
     st.text_input(
         "Valor Estimado",
-        value="",
+        value=PNCPParser.moeda(licitacao.get("valor")),
         disabled=True
     )
 
     st.text_input(
         "Situação",
-        value="",
+        value="Cancelada" if licitacao.get("cancelado") else "Vigente",
         disabled=True
     )
 
@@ -100,9 +122,10 @@ st.subheader("Objeto da Contratação")
 
 st.text_area(
     "",
-    value="",
+    value=licitacao.get("objeto", ""),
     height=180,
-    disabled=True
+    disabled=True,
+    label_visibility="collapsed"
 )
 
 st.divider()
@@ -115,26 +138,38 @@ st.subheader("Score SCM")
 
 col1, col2, col3 = st.columns(3)
 
-with col1:
+score = licitacao.get("score", 0)
+classificacao = licitacao.get("classificacao", "-")
 
-    st.metric(
-        "Score",
-        "0"
-    )
+recomendacao = (
+    "Investir na proposta" if licitacao.get("oportunidade")
+    else "Não recomendado"
+)
+
+with col1:
+    st.metric("Score", score)
 
 with col2:
-
-    st.metric(
-        "Classificação",
-        "-"
-    )
+    st.metric("Classificação", classificacao)
 
 with col3:
+    st.metric("Recomendação", recomendacao)
 
-    st.metric(
-        "Recomendação",
-        "-"
-    )
+if licitacao.get("motivos"):
+    st.caption(f"⚠️ Motivos de atenção: {licitacao['motivos']}")
+
+with st.expander("Como esse score foi calculado?"):
+
+    score_service = ScoreService()
+
+    texto = licitacao.get("objeto", "")
+    municipio = licitacao.get("municipio", "")
+    proposta_aberta = licitacao.get("recebimento_proposta", False)
+
+    st.write(f"- Região (município monitorado): **{score_service.score_regiao(municipio)} pts**")
+    st.write(f"- Palavras-chave SCM no objeto: **{score_service.score_palavras(texto)} pts**")
+    st.write(f"- Aderência a CNAE da SCM: **{score_service.score_cnae(texto)} pts**")
+    st.write(f"- Proposta em aberto: **{score_service.score_proposta(proposta_aberta)} pts**")
 
 st.divider()
 
@@ -144,9 +179,14 @@ st.divider()
 
 st.subheader("Documentos")
 
-st.info(
-    "Os documentos da contratação serão exibidos nesta área."
-)
+link = licitacao.get("link", "")
+
+if link:
+    st.link_button("🔗 Acessar edital no sistema de origem", link, use_container_width=True)
+else:
+    st.info(
+        "Nenhum link de documento disponível para esta licitação."
+    )
 
 st.divider()
 
@@ -156,10 +196,20 @@ st.divider()
 
 st.subheader("Observações")
 
-st.text_area(
+chave_obs = f"obs_{licitacao.get('numero_pncp', 'sem_numero')}"
+
+observacao = st.text_area(
     "Anotações da análise",
-    value="",
+    value=st.session_state.get(chave_obs, ""),
     height=180
+)
+
+if observacao != st.session_state.get(chave_obs, ""):
+    st.session_state[chave_obs] = observacao
+
+st.caption(
+    "⚠️ As observações são mantidas apenas durante esta sessão do navegador. "
+    "Para persistir entre sessões, é necessário integrar com o banco de dados."
 )
 
 st.divider()
@@ -172,23 +222,36 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
 
-    st.button(
+    if st.button(
         "⬅️ Voltar",
         use_container_width=True
-    )
+    ):
+        st.switch_page("pages/03_⭐_Oportunidades.py")
 
 with col2:
 
-    st.button(
-        "📤 Exportar",
-        use_container_width=True,
-        disabled=True
+    caminho_excel = ExportacaoService.excel(
+        [licitacao],
+        arquivo=f"licitacao_{licitacao.get('numero_pncp', 'detalhe')}.xlsx"
     )
+
+    with open(caminho_excel, "rb") as arquivo:
+
+        st.download_button(
+            "📤 Exportar",
+            data=arquivo,
+            file_name=f"licitacao_{licitacao.get('numero_pncp', 'detalhe')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
 
 with col3:
 
-    st.button(
+    if st.button(
         "🔄 Atualizar Dados",
-        use_container_width=True,
-        disabled=True
-    )
+        use_container_width=True
+    ):
+        st.info(
+            "Para atualizar, volte a Oportunidades e clique em 'Atualizar' — "
+            "isso reconsulta o PNCP e recalcula o Score SCM."
+        )
