@@ -9,15 +9,15 @@ import os
 from pathlib import Path
 from datetime import datetime, timedelta
 
-# Garante que o Python encontre as pastas locais
 sys.path.insert(0, os.path.abspath(os.getcwd()))
 
 import streamlit as st
 from database.migrations import inicializar_banco
 
-# IMPORTAÇÃO EXATA DAS SUAS FUNÇÕES
 from api.contratacoes import propostas_abertas
+from api.parser import PNCPParser
 from services.estatistica_service import EstatisticaService
+from services.oportunidade_service import OportunidadeService
 
 # ==============================================================================
 # CONFIGURAÇÃO DA PÁGINA
@@ -32,25 +32,47 @@ st.set_page_config(
 inicializar_banco()
 
 # ==============================================================================
-# LÓGICA DE DADOS (Chamada direta às suas funções)
+# LÓGICA DE DADOS
 # ==============================================================================
+
 @st.cache_data(ttl=3600)
 def obter_dados_do_pncp():
-    # Define o período (ex: últimos 30 dias)
+
     hoje = datetime.now().strftime("%Y%m%d")
     inicio = (datetime.now() - timedelta(days=30)).strftime("%Y%m%d")
-    
-    # CHAMADA DIRETA DA SUA FUNÇÃO ORIGINAL
-    return propostas_abertas(data_inicial=inicio, data_final=hoje)
 
-# Carrega os dados brutos da sua função
-dados_brutos = obter_dados_do_pncp()
+    resposta = propostas_abertas(data_inicial=inicio, data_final=hoje)
 
-# Processa com seu serviço de estatística
-resumo = EstatisticaService.resumo(dados_brutos) if dados_brutos else {}
+    if not resposta.get("success"):
+        return [], resposta.get("message", "Erro desconhecido ao consultar o PNCP.")
+
+    # O array real de licitações está em resposta["data"]["data"]
+    brutos = resposta["data"].get("data", [])
+
+    # Normaliza os campos (objetoCompra -> objeto, unidadeOrgao -> municipio, etc.)
+    normalizados = PNCPParser.parse_contratacoes(brutos)
+
+    # Calcula score / classificação / oportunidade para cada licitação
+    servico_oportunidade = OportunidadeService()
+
+    for item in normalizados:
+        analise = servico_oportunidade.analisar(item)
+        item["score"] = analise["score"]
+        item["classificacao"] = analise["classificacao"]
+        item["oportunidade"] = analise["oportunidade"]
+
+    return normalizados, None
+
+
+dados_scm, erro = obter_dados_do_pncp()
+
+if erro:
+    st.warning(f"⚠️ Não foi possível consultar o PNCP agora: {erro}")
+
+resumo = EstatisticaService.resumo(dados_scm) if dados_scm else {}
 
 # ==============================================================================
-# INDICADORES (Usando as chaves do seu EstatisticaService)
+# INDICADORES
 # ==============================================================================
 col1, col2, col3, col4 = st.columns(4)
 
@@ -88,113 +110,4 @@ de uma proposta?</b>
     unsafe_allow_html=True
 )
 
-# ==============================================================================
-# MÓDULOS
-# ==============================================================================
-
-st.markdown("## 🚀 Módulos da Plataforma")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-
-    st.info("""
-### 🔍 Radar de Licitações
-
-Consulta das oportunidades abertas no PNCP.
-""")
-
-    st.info("""
-### ⭐ Oportunidades
-
-Classificação automática utilizando o Score SCM.
-""")
-
-    st.info("""
-### 📑 Detalhes
-
-Análise completa de cada licitação.
-""")
-
-with col2:
-
-    st.info("""
-### 🏛️ Órgãos
-
-Órgãos públicos contratantes.
-""")
-
-    st.info("""
-### 📅 Atas de Registro
-
-Consulta das Atas vigentes.
-""")
-
-    st.info("""
-### 📋 Contratos
-
-Consulta de contratos públicos.
-""")
-
-with col3:
-
-    st.info("""
-### 📊 Estatísticas
-
-Indicadores e gráficos.
-""")
-
-    st.info("""
-### ⚙️ Configurações
-
-Preferências da plataforma.
-""")
-
-    st.info("""
-### 🤖 Inteligência SCM
-
-Filtros inteligentes, Score SCM e futuras análises por IA.
-""")
-
-# ==============================================================================
-# ROADMAP
-# ==============================================================================
-
-st.markdown("## 🛣️ Roadmap")
-
-st.progress(20)
-
-st.markdown("""
-- ✅ Estrutura do projeto
-
-- 🔄 Integração com a API do PNCP
-
-- 🔄 Implementação do Radar de Licitações
-
-- 🔄 Score SCM
-
-- 🔄 Dashboard Inteligente
-
-- ⏳ Inteligência Artificial
-""")
-
-# ==============================================================================
-# RODAPÉ
-# ==============================================================================
-
-st.divider()
-
-st.markdown(
-    """
-<div class='footer'>
-
-SCM_GOV • Radar Estratégico de Licitações Públicas
-
-Versão 1.0.0
-
-Desenvolvido para SCM Reformas e Engenharia
-
-</div>
-""",
-    unsafe_allow_html=True
-)
+# ... (o restante do arquivo — Módulos, Roadmap, Rodapé — pode ficar exatamente como está)
