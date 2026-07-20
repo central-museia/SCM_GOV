@@ -119,3 +119,51 @@ def consultar(
     )
 
     return pncp.get(endpoint)
+
+# ==========================================================
+# TODAS AS PROPOSTAS (todas as páginas)
+# ==========================================================
+
+def consultar_todas_propostas(
+    data_inicial: str,
+    data_final: str,
+    tamanho_pagina: int = 100,
+):
+    """
+    Percorre todas as páginas de propostas abertas e retorna
+    uma lista única com todos os registros brutos do PNCP.
+    """
+
+    pagina = 1
+    todas = []
+
+    while True:
+
+        resposta = propostas_abertas(
+            data_inicial=data_inicial,
+            data_final=data_final,
+            pagina=pagina,
+            tamanho_pagina=tamanho_pagina
+        )
+
+        if not resposta.get("success"):
+            return resposta
+
+        dados = resposta["data"]
+
+        itens = dados.get("data", [])
+
+        todas.extend(itens)
+
+        paginas_restantes = dados.get("paginasRestantes", 0)
+
+        if paginas_restantes <= 0:
+            break
+
+        pagina += 1
+
+    return {
+        "success": True,
+        "total": len(todas),
+        "data": todas
+    }
