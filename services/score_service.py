@@ -79,7 +79,7 @@ class ScoreService:
 
         return min(pontos, 40)
 
-    # ----------------------------------------------------------
+   # ----------------------------------------------------------
     # CNAE
     # ----------------------------------------------------------
 
@@ -94,11 +94,22 @@ class ScoreService:
 
         for item in self.cnaes:
 
-            for palavra in item.get("palavras_chave", []):
+            descricao = item.get("descricao", "")
 
-                if palavra.lower() in texto:
+            if not descricao:
+                continue
 
-                    pontos += 5
+            # Quebra a descrição em palavras significativas (>3 letras)
+            # e verifica se alguma aparece no objeto da licitação
+            palavras_descricao = [
+                p.strip(".,()/")
+                for p in descricao.lower().split()
+                if len(p) > 3
+            ]
+
+            if any(palavra in texto for palavra in palavras_descricao):
+
+                pontos += 10 if item.get("principal") else 5
 
         return min(pontos, 20)
 
