@@ -120,44 +120,51 @@ def consultar(
 
     return pncp.get(endpoint)
 
+
 # ==========================================================
-# TODAS AS PROPOSTAS (todas as páginas)
+# CONSULTAR TODAS AS PÁGINAS (PROPOSTAS ABERTAS)
 # ==========================================================
 
 def consultar_todas_propostas(
     data_inicial: str,
     data_final: str,
-    tamanho_pagina: int = 100,
+    tamanho_pagina: int = 50,
+    max_paginas: int = 20,
 ):
     """
-    Percorre todas as páginas de propostas abertas e retorna
-    uma lista única com todos os registros brutos do PNCP.
+    Percorre todas as páginas de contratações com propostas abertas
+    no período informado e retorna uma lista única e "achatada"
+    de registros brutos do PNCP.
+
+    O limite `max_paginas` evita consultas excessivas à API em
+    períodos muito longos (20 páginas x 50 registros = até 1000
+    licitações por consulta).
     """
 
     pagina = 1
     todas = []
 
-    while True:
+    while pagina <= max_paginas:
 
         resposta = propostas_abertas(
             data_inicial=data_inicial,
             data_final=data_final,
             pagina=pagina,
-            tamanho_pagina=tamanho_pagina
+            tamanho_pagina=tamanho_pagina,
         )
 
         if not resposta.get("success"):
             return resposta
 
-        dados = resposta["data"]
+        dados = resposta.get("data", {}) or {}
 
-        itens = dados.get("data", [])
+        registros = dados.get("data", [])
 
-        todas.extend(itens)
+        todas.extend(registros)
 
         paginas_restantes = dados.get("paginasRestantes", 0)
 
-        if paginas_restantes <= 0:
+        if not paginas_restantes:
             break
 
         pagina += 1
@@ -165,5 +172,26 @@ def consultar_todas_propostas(
     return {
         "success": True,
         "total": len(todas),
-        "data": todas
+        "data": todas,
     }
+
+
+# ==========================================================
+# RESUMO
+# ==========================================================
+
+def resumo(
+    data_inicial: str,
+    data_final: str,
+):
+    """
+    Retorna apenas a primeira página da consulta de contratações.
+    Ideal para dashboards e indicadores.
+    """
+
+    return propostas_abertas(
+        data_inicial=data_inicial,
+        data_final=data_final,
+        pagina=1,
+        tamanho_pagina=50
+    )
