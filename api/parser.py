@@ -127,6 +127,101 @@ class PNCPParser:
         ]
 
     # ==========================================================
+    # LICITAÇÃO / CONTRATAÇÃO
+    # ==========================================================
+
+    @staticmethod
+    def parse_licitacao(item):
+        """
+        Normaliza um registro de contratação retornado pelo endpoint
+        /v1/contratacoes/proposta (ou /publicacao) do PNCP para um
+        formato simples, usado pelos serviços de Score, Filtro e
+        pela página de Oportunidades.
+        """
+
+        orgao_entidade = item.get("orgaoEntidade", {}) or {}
+
+        unidade_orgao = item.get("unidadeOrgao", {}) or {}
+
+        situacao = item.get("situacaoCompraNome", "") or ""
+
+        return {
+
+            "numero_pncp": item.get("numeroControlePNCP"),
+
+            "numero_compra": item.get("numeroCompra"),
+
+            "ano_compra": item.get("anoCompra"),
+
+            "processo": item.get("processo"),
+
+            "objeto": item.get("objetoCompra", "") or "",
+
+            "orgao": orgao_entidade.get("razaoSocial"),
+
+            "cnpj_orgao": orgao_entidade.get("cnpj"),
+
+            "esfera": orgao_entidade.get("esferaId"),
+
+            "poder": orgao_entidade.get("poderId"),
+
+            "unidade": unidade_orgao.get("nomeUnidade"),
+
+            "codigo_unidade": unidade_orgao.get("codigoUnidade"),
+
+            "municipio": unidade_orgao.get("municipioNome"),
+
+            "uf": unidade_orgao.get("ufSigla"),
+
+            "modalidade": item.get("modalidadeNome"),
+
+            "modo_disputa": item.get("modoDisputaNome"),
+
+            "situacao": situacao,
+
+            "valor_estimado": item.get("valorTotalEstimado"),
+
+            "data_publicacao": item.get("dataPublicacaoPncp"),
+
+            "data_publicacao_fmt": PNCPParser.formatar_data(
+                item.get("dataPublicacaoPncp")
+            ),
+
+            "data_abertura_proposta": item.get("dataAberturaProposta"),
+
+            "data_abertura_proposta_fmt": PNCPParser.formatar_data(
+                item.get("dataAberturaProposta")
+            ),
+
+            "data_encerramento_proposta": item.get("dataEncerramentoProposta"),
+
+            "data_encerramento_proposta_fmt": PNCPParser.formatar_data(
+                item.get("dataEncerramentoProposta")
+            ),
+
+            "link": item.get("linkSistemaOrigem"),
+
+            "cancelado": "cancelad" in situacao.lower(),
+
+            "recebimento_proposta": True,
+
+        }
+
+    # ==========================================================
+    # LISTA DE LICITAÇÕES
+    # ==========================================================
+
+    @staticmethod
+    def parse_licitacoes(resposta):
+
+        dados = resposta.get("data", [])
+
+        return [
+            PNCPParser.parse_licitacao(item)
+            for item in dados
+        ]
+
+    # ==========================================================
     # RESPOSTA PADRÃO
     # ==========================================================
 
@@ -137,88 +232,3 @@ class PNCPParser:
             "dados": resposta.get("data", []),
             "paginacao": PNCPParser.paginacao(resposta)
         }
-
-# ==========================================================
-    # CONTRATAÇÃO / PROPOSTA
-    # ==========================================================
-
-    @staticmethod
-    def parse_contratacao(item):
-
-        orgao = item.get("orgaoEntidade", {}) or {}
-        unidade = item.get("unidadeOrgao", {}) or {}
-
-        return {
-
-            "numero_pncp": item.get("numeroControlePNCP"),
-
-            "objeto": item.get("objetoCompra", "") or "",
-
-            "orgao": orgao.get("razaoSocial", "") or "",
-
-            "cnpj": orgao.get("cnpj", ""),
-
-            "municipio": unidade.get("municipioNome", "") or "",
-
-            "uf": unidade.get("ufSigla", "") or "",
-
-            "modalidade": item.get("modalidadeNome", "") or "",
-
-            "valor": item.get("valorTotalEstimado") or 0,
-
-            "data_publicacao": PNCPParser.formatar_data(
-                item.get("dataPublicacaoPncp")
-            ),
-
-            "encerramento_proposta": item.get("dataEncerramentoProposta"),
-
-            "cancelado": bool(item.get("dataCancelamento")),
-
-            "recebimento_proposta": True,
-
-            "link": item.get("linkSistemaOrigem", "")
-        }
-
-    @staticmethod
-    def parse_contratacoes(itens):
-
-        return [
-            PNCPParser.parse_contratacao(item)
-            for item in itens
-        ]
-
-# ==========================================================
-    # CONTRATAÇÃO / PROPOSTA
-    # ==========================================================
-
-    @staticmethod
-    def parse_contratacao(item):
-
-        orgao = item.get("orgaoEntidade", {}) or {}
-        unidade = item.get("unidadeOrgao", {}) or {}
-
-        return {
-            "numero_pncp": item.get("numeroControlePNCP"),
-            "objeto": item.get("objetoCompra", "") or "",
-            "orgao": orgao.get("razaoSocial", "") or "",
-            "cnpj": orgao.get("cnpj", ""),
-            "municipio": unidade.get("municipioNome", "") or "",
-            "uf": unidade.get("ufSigla", "") or "",
-            "modalidade": item.get("modalidadeNome", "") or "",
-            "valor": item.get("valorTotalEstimado") or 0,
-            "data_publicacao": PNCPParser.formatar_data(
-                item.get("dataPublicacaoPncp")
-            ),
-            "encerramento_proposta": item.get("dataEncerramentoProposta"),
-            "cancelado": bool(item.get("dataCancelamento")),
-            "recebimento_proposta": True,
-            "link": item.get("linkSistemaOrigem", "")
-        }
-
-    @staticmethod
-    def parse_contratacoes(itens):
-
-        return [
-            PNCPParser.parse_contratacao(item)
-            for item in itens
-        ]
