@@ -1,241 +1,493 @@
 """
-Score SCM
+Oportunidades SCM
 
-Calcula a aderência de uma licitação ao perfil da SCM.
+Lista todas as licitações abertas no PNCP compatíveis com os CNAEs
+e as palavras-chave cadastradas pela SCM, com os dados necessários
+para uma decisão rápida sobre participar ou não.
 
-Autor: SCM_GOV
+Autor: SCM Engenharia
 """
 
-import json
-import re
-from pathlib import Path
+from datetime import datetime, date, timedelta
 
+import pandas as pd
+import streamlit as st
 
-class ScoreService:
+from api.contratacoes import consultar_todas_propostas
+from api.parser import PNCPParser
+from services.filtro_service import FiltroService
+from services.score_service import ScoreService
+from services.exportacao_service import ExportacaoService
 
-    def __init__(self):
+# ==============================================================================
+# CONFIGURAÇÃO
+# ==============================================================================
 
-        self.cnaes = self._carregar_json("assets/cnaes.json")
-        self.palavras = self._carregar_json("assets/palavras_chave.json")
-        self.regioes = self._carregar_json("assets/regioes_rj.json") or self._carregar_json("assets/estados.json")
+st.set_page_config(
+    page_title="Oportunidades SCM | SCM_GOV",
+    page_icon="🎯",
+    layout="wide"
+)
 
-    # ----------------------------------------------------------
-    # UTIL
-    # ----------------------------------------------------------
+if "favoritos" not in st.session_state:
+    st.session_state["favoritos"] = set()
 
-    @staticmethod
-    def _carregar_json(caminho):
+# ==============================================================================
+# CABEÇALHO
+# ==============================================================================
 
-        arquivo = Path(caminho)
+st.title("🎯 Oportunidades SCM")
 
-        if not arquivo.exists():
-            return {}
+st.caption(
+    "Licitações abertas no PNCP filtradas automaticamente pelos CNAEs "
+    "e palavras-chave cadastrados, com Score SCM para apoiar a decisão "
+    "de participar ou não."
+)
 
-        with open(arquivo, "r", encoding="utf-8") as f:
-            return json.load(f)
+st.divider()
 
-    @staticmethod
-    def _palavras_relevantes(texto, minimo=4):
-        """
-        Extrai da descrição do CNAE apenas as palavras "significativas"
-        (ignora preposições/artigos curtos) para comparar com o objeto
-        da licitação.
-        """
+# ==============================================================================
+# FUNÇÕES DE APOIO
+# ==============================================================================
 
-        palavras = re.findall(r"[A-Za-zÀ-ÿ]+", texto.lower())
 
-        return [p for p in palavras if len(p) >= minimo]
+@st.cache_resource
+def carregar_score_service():
+    return ScoreService()
 
-    # ----------------------------------------------------------
-    # REGIÃO
-    # ----------------------------------------------------------
 
-    def score_regiao(self, municipio):
+@st.cache_data(ttl=3600, show_spinner=False)
+def buscar_licitacoes(data_inicial: str, data_final: str):
 
-        if not municipio:
-            return 0
+    resposta = consultar_todas_propostas(
+        data_inicial=data_inicial,
+        data_final=data_final,
+    )
 
-        municipio = municipio.lower()
+    if not resposta.get("success"):
+        return [], resposta.get("message", "Erro desconhecido ao consultar o PNCP.")
 
-        regioes = self.regioes if isinstance(self.regioes, list) else []
+    brutos = resposta.get("data", [])
 
-        for regiao in regioes:
+    licitacoes = [
+        PNCPParser.parse_licitacao(item)
+        for item in brutos
+    ]
 
-            municipios = [
-                m.lower()
-                for m in regiao.get("municipios", [])
-            ]
+    licitacoes = FiltroService.remover_cancelados(licitacoes)
 
-            if municipio in municipios:
-                return 30
+    return licitacoes, None
 
-        return 0
 
-    # ----------------------------------------------------------
-    # PALAVRAS-CHAVE
-    # ----------------------------------------------------------
+def dias_restantes(data_encerramento):
 
-    def score_palavras(self, texto):
+    if not data_encerramento:
+        return None
 
-        if not texto:
-            return 0
+    try:
+        data = datetime.fromisoformat(
+            data_encerramento.replace("Z", "")
+        ).date()
+    except Exception:
+        return None
 
-        texto = texto.lower()
+    return (data - date.today()).days
 
-        pontos = 0
 
-        for categoria in self.palavras.values():
+def estrelas(score):
 
-            for palavra in categoria:
+    cheias = round(score / 20)
 
-                if palavra.lower() in texto:
+    return "★" * cheias + "☆" * (5 - cheias)
 
-                    pontos += 4
 
-        return min(pontos, 40)
+def cor_classificacao(classificacao):
 
-    def palavras_compativeis(self, texto):
-        """
-        Retorna a lista (sem repetição) de palavras-chave cadastradas
-        que aparecem no objeto da licitação.
-        """
+    return {
+        "Excelente": "🟢",
+        "Alta": "🟢",
+        "Média": "🟡",
+        "Baixa": "🟠",
+        "Descartar": "🔴",
+    }.get(classificacao, "⚪")
 
-        if not texto:
-            return []
 
-        texto = texto.lower()
+# ==============================================================================
+# FILTROS DE BUSCA
+# ==============================================================================
 
-        encontradas = []
+st.subheader("Período da Consulta")
 
-        for categoria in self.palavras.values():
+col1, col2 = st.columns(2)
 
-            for palavra in categoria:
+with col1:
 
-                if palavra.lower() in texto and palavra not in encontradas:
+    data_inicial = st.date_input(
+        "Publicado a partir de",
+        value=date.today() - timedelta(days=30)
+    )
 
-                    encontradas.append(palavra)
+with col2:
 
-        return encontradas
+    data_final = st.date_input(
+        "Publicado até",
+        value=date.today()
+    )
 
-    # ----------------------------------------------------------
-    # CNAE
-    # ----------------------------------------------------------
+buscar = st.button(
+    "🔍 Buscar Oportunidades no PNCP",
+    use_container_width=True,
+    type="primary"
+)
 
-    def score_cnae(self, texto):
+st.divider()
 
-        if not texto:
-            return 0
+if buscar:
+    st.session_state["oportunidades_buscadas"] = True
 
-        texto = texto.lower()
+if not st.session_state.get("oportunidades_buscadas"):
 
-        pontos = 0
+    st.info(
+        "Clique em **Buscar Oportunidades no PNCP** para consultar as "
+        "licitações com propostas em aberto no período selecionado."
+    )
 
-        for item in self.cnaes:
+    st.stop()
 
-            descricao = item.get("descricao", "")
+# ==============================================================================
+# BUSCA E PROCESSAMENTO
+# ==============================================================================
 
-            palavras_chave = item.get("palavras_chave") or self._palavras_relevantes(descricao)
+with st.spinner("Consultando o PNCP e calculando o Score SCM..."):
 
-            if any(palavra.lower() in texto for palavra in palavras_chave):
+    licitacoes, erro = buscar_licitacoes(
+        data_inicial.strftime("%Y%m%d"),
+        data_final.strftime("%Y%m%d"),
+    )
 
-                pontos += 5
+    if erro:
+        st.error(f"Não foi possível consultar o PNCP: {erro}")
+        st.stop()
 
-        return min(pontos, 20)
+    score_service = carregar_score_service()
 
-    def cnaes_compativeis(self, texto):
-        """
-        Retorna os CNAEs da SCM (código + descrição) cuja descrição
-        tem alguma palavra relevante presente no objeto da licitação.
-        """
+    oportunidades = []
 
-        if not texto:
-            return []
+    for lic in licitacoes:
 
-        texto = texto.lower()
+        palavras = score_service.palavras_compativeis(lic["objeto"])
+        cnaes = score_service.cnaes_compativeis(lic["objeto"])
 
-        encontrados = []
+        # Só entra na lista se houver aderência real a CNAE OU palavra-chave
+        if not palavras and not cnaes:
+            continue
 
-        for item in self.cnaes:
+        score = score_service.calcular(lic)
+        fatores = score_service.fatores(lic)
+        classificacao = score_service.classificacao(score)
 
-            descricao = item.get("descricao", "")
+        lic["score"] = score
+        lic["classificacao"] = classificacao
+        lic["fatores"] = fatores
+        lic["palavras_compativeis"] = palavras
+        lic["cnaes_compativeis"] = cnaes
+        lic["dias_restantes"] = dias_restantes(lic["data_encerramento_proposta"])
 
-            palavras_chave = item.get("palavras_chave") or self._palavras_relevantes(descricao)
+        oportunidades.append(lic)
 
-            if any(palavra.lower() in texto for palavra in palavras_chave):
+if not oportunidades:
 
-                encontrados.append(item)
+    st.warning(
+        "Nenhuma licitação aberta no período corresponde aos CNAEs ou "
+        "às palavras-chave cadastradas."
+    )
 
-        return encontrados
+    st.stop()
 
-    # ----------------------------------------------------------
-    # PROPOSTA ABERTA
-    # ----------------------------------------------------------
+# ==============================================================================
+# FILTROS SOBRE O RESULTADO
+# ==============================================================================
 
-    @staticmethod
-    def score_proposta(aberta):
+st.subheader("Filtros")
 
-        return 10 if aberta else 0
+col1, col2, col3, col4 = st.columns(4)
 
-    # ----------------------------------------------------------
-    # SCORE FINAL
-    # ----------------------------------------------------------
+municipios_disponiveis = sorted({
+    lic["municipio"] for lic in oportunidades if lic["municipio"]
+})
 
-    def calcular(self, licitacao):
+modalidades_disponiveis = sorted({
+    lic["modalidade"] for lic in oportunidades if lic["modalidade"]
+})
 
-        texto = licitacao.get("objeto", "")
+with col1:
 
-        municipio = licitacao.get("municipio", "")
+    score_minimo = st.slider(
+        "Score mínimo",
+        min_value=0,
+        max_value=100,
+        value=30
+    )
 
-        proposta = licitacao.get(
-            "recebimento_proposta",
-            False
+with col2:
+
+    classificacao_filtro = st.selectbox(
+        "Compatibilidade SCM",
+        ["Todas", "Excelente", "Alta", "Média", "Baixa"]
+    )
+
+with col3:
+
+    municipio_filtro = st.selectbox(
+        "Município",
+        ["Todos"] + municipios_disponiveis
+    )
+
+with col4:
+
+    modalidade_filtro = st.selectbox(
+        "Modalidade",
+        ["Todas"] + modalidades_disponiveis
+    )
+
+ordenar_por = st.radio(
+    "Ordenar por",
+    ["Score (maior primeiro)", "Valor estimado (maior primeiro)", "Prazo (mais urgente primeiro)"],
+    horizontal=True
+)
+
+filtradas = [
+    lic for lic in oportunidades
+    if lic["score"] >= score_minimo
+    and (classificacao_filtro == "Todas" or lic["classificacao"] == classificacao_filtro)
+    and (municipio_filtro == "Todos" or lic["municipio"] == municipio_filtro)
+    and (modalidade_filtro == "Todas" or lic["modalidade"] == modalidade_filtro)
+]
+
+if ordenar_por == "Score (maior primeiro)":
+    filtradas.sort(key=lambda x: x["score"], reverse=True)
+elif ordenar_por == "Valor estimado (maior primeiro)":
+    filtradas.sort(key=lambda x: x["valor_estimado"] or 0, reverse=True)
+else:
+    filtradas.sort(key=lambda x: (x["dias_restantes"] if x["dias_restantes"] is not None else 9999))
+
+st.divider()
+
+# ==============================================================================
+# RESUMO
+# ==============================================================================
+
+valor_total = sum(lic["valor_estimado"] or 0 for lic in filtradas)
+score_medio = round(sum(lic["score"] for lic in filtradas) / len(filtradas), 1) if filtradas else 0
+orgaos_unicos = len({lic["orgao"] for lic in filtradas if lic["orgao"]})
+
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.metric("Oportunidades", len(filtradas))
+
+with col2:
+    st.metric("Score Médio", score_medio)
+
+with col3:
+    st.metric("Órgãos", orgaos_unicos)
+
+with col4:
+    st.metric("Valor Total Estimado", f"R$ {valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+
+st.divider()
+
+# ==============================================================================
+# EXPORTAÇÃO
+# ==============================================================================
+
+col1, col2 = st.columns([3, 1])
+
+with col2:
+
+    if st.button("📤 Exportar Excel", use_container_width=True):
+
+        caminho = ExportacaoService.excel(
+            filtradas,
+            arquivo="oportunidades_scm.xlsx"
         )
 
-        score = (
-            self.score_regiao(municipio)
-            + self.score_palavras(texto)
-            + self.score_cnae(texto)
-            + self.score_proposta(proposta)
-        )
+        st.success(f"Exportado para {caminho}")
 
-        return min(score, 100)
+st.subheader(f"📋 {len(filtradas)} Oportunidade(s) Encontrada(s)")
 
-    def fatores(self, licitacao):
-        """
-        Retorna o detalhamento do score por fator, usado para exibir
-        a "explicação" da pontuação (Nível 3 - Score SCM).
-        """
+# ==============================================================================
+# CARTÕES DE OPORTUNIDADE
+# ==============================================================================
 
-        texto = licitacao.get("objeto", "")
+for lic in filtradas:
 
-        municipio = licitacao.get("municipio", "")
+    numero_pncp = lic["numero_pncp"] or "sem-numero"
 
-        proposta = licitacao.get("recebimento_proposta", False)
+    with st.container(border=True):
 
-        return {
-            "Região de atuação": self.score_regiao(municipio),
-            "Palavras-chave": self.score_palavras(texto),
-            "CNAE": self.score_cnae(texto),
-            "Proposta em aberto": self.score_proposta(proposta),
-        }
+        # ------------------------------------------------------------
+        # NÍVEL 1 - DECISÃO RÁPIDA
+        # ------------------------------------------------------------
 
-    # ----------------------------------------------------------
-    # CLASSIFICAÇÃO
-    # ----------------------------------------------------------
+        col_score, col_info, col_extra = st.columns([1, 3, 2])
 
-    @staticmethod
-    def classificacao(score):
+        with col_score:
 
-        if score >= 85:
-            return "Excelente"
+            st.markdown(f"### {cor_classificacao(lic['classificacao'])} {lic['score']} pontos")
+            st.markdown(estrelas(lic["score"]))
+            st.caption(lic["classificacao"])
 
-        if score >= 70:
-            return "Alta"
+        with col_info:
 
-        if score >= 50:
-            return "Média"
+            st.markdown(f"**{lic['objeto'][:160]}{'...' if len(lic['objeto']) > 160 else ''}**")
+            st.caption(f"🏛️ {lic['orgao'] or 'Órgão não informado'}")
+            st.caption(
+                f"📍 {lic['municipio'] or '-'} / {lic['uf'] or '-'}  •  "
+                f"📄 {lic['modalidade'] or 'Modalidade não informada'}  •  "
+                f"🟢 {lic['situacao'] or 'Aberta'}"
+            )
 
-        if score >= 30:
-            return "Baixa"
+            if lic["cnaes_compativeis"]:
+                badges = " ".join(f"`{c['codigo']}`" for c in lic["cnaes_compativeis"][:5])
+                st.caption(f"CNAEs compatíveis: {badges}")
 
-        return "Descartar"
+        with col_extra:
+
+            valor = lic["valor_estimado"]
+            st.metric(
+                "Valor Estimado",
+                f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if valor else "Não informado"
+            )
+
+            dias = lic["dias_restantes"]
+
+            if dias is None:
+                st.caption("⏳ Prazo não informado")
+            elif dias < 0:
+                st.caption("⚫ Prazo encerrado")
+            elif dias <= 3:
+                st.caption(f"🔴 URGENTE — faltam {dias} dia(s)")
+            elif dias <= 7:
+                st.caption(f"🟡 Faltam {dias} dias")
+            else:
+                st.caption(f"🟢 Faltam {dias} dias")
+
+            st.caption(f"Sessão: {lic['data_abertura_proposta_fmt'] or lic['data_encerramento_proposta_fmt'] or '-'}")
+
+        # ------------------------------------------------------------
+        # AÇÕES RÁPIDAS
+        # ------------------------------------------------------------
+
+        acoes = st.columns(6)
+
+        with acoes[0]:
+            if lic["link"]:
+                st.link_button("📄 Ver Edital", lic["link"], use_container_width=True)
+            else:
+                st.button("📄 Ver Edital", disabled=True, use_container_width=True, key=f"edital_{numero_pncp}")
+
+        with acoes[1]:
+            st.button("🤖 Analisar com IA", disabled=True, use_container_width=True, key=f"ia_{numero_pncp}",
+                       help="Em breve: leitura automática do edital pela IA")
+
+        with acoes[2]:
+            st.button("📊 Ver Riscos", disabled=True, use_container_width=True, key=f"riscos_{numero_pncp}",
+                       help="Em breve: extração de riscos do edital")
+
+        with acoes[3]:
+            st.button("📁 Checklist Docs", disabled=True, use_container_width=True, key=f"docs_{numero_pncp}",
+                       help="Em breve: checklist de documentos exigidos")
+
+        with acoes[4]:
+            st.button("📈 Estimar Custos", disabled=True, use_container_width=True, key=f"custos_{numero_pncp}",
+                       help="Em breve: estimativa de custos da proposta")
+
+        with acoes[5]:
+            favoritado = numero_pncp in st.session_state["favoritos"]
+            label = "⭐ Favoritado" if favoritado else "☆ Favoritar"
+            if st.button(label, use_container_width=True, key=f"fav_{numero_pncp}"):
+                if favoritado:
+                    st.session_state["favoritos"].discard(numero_pncp)
+                else:
+                    st.session_state["favoritos"].add(numero_pncp)
+                st.rerun()
+
+        # ------------------------------------------------------------
+        # NÍVEL 2 E 3 - DETALHES ESTRATÉGICOS
+        # ------------------------------------------------------------
+
+        with st.expander("🔎 Ver detalhes estratégicos e Score SCM"):
+
+            col_a, col_b = st.columns(2)
+
+            with col_a:
+
+                st.markdown("**Objeto completo**")
+                st.write(lic["objeto"] or "Não informado")
+
+                st.markdown("**Escopo identificado (palavras-chave)**")
+                if lic["palavras_compativeis"]:
+                    for palavra in lic["palavras_compativeis"]:
+                        st.write(f"✔ {palavra}")
+                else:
+                    st.write("Nenhuma palavra-chave identificada no objeto.")
+
+                st.markdown("**Local**")
+                st.write(f"{lic['municipio'] or '-'} / {lic['uf'] or '-'}")
+
+                st.markdown("**Processo / Compra**")
+                st.write(
+                    f"Nº {lic['numero_compra'] or '-'}/{lic['ano_compra'] or '-'}  •  "
+                    f"Processo: {lic['processo'] or '-'}"
+                )
+
+                st.markdown("**Modo de Disputa**")
+                st.write(lic["modo_disputa"] or "Não informado")
+
+            with col_b:
+
+                st.markdown("**Score SCM — detalhamento**")
+
+                for fator, pontos in lic["fatores"].items():
+                    maximo = {"Região de atuação": 30, "Palavras-chave": 40, "CNAE": 20, "Proposta em aberto": 10}.get(fator, 100)
+                    st.progress(
+                        min(pontos / maximo, 1.0) if maximo else 0,
+                        text=f"{fator}: {pontos}/{maximo}"
+                    )
+
+                st.markdown("**CNAEs compatíveis**")
+                if lic["cnaes_compativeis"]:
+                    for c in lic["cnaes_compativeis"]:
+                        st.write(f"✔ {c['codigo']} — {c['descricao']}")
+                else:
+                    st.write("Nenhum CNAE compatível identificado no objeto.")
+
+                st.markdown("**Alertas automáticos**")
+
+                if lic["cnaes_compativeis"] or lic["palavras_compativeis"]:
+                    st.write("🟢 Objeto compatível com o perfil da SCM")
+                else:
+                    st.write("🔴 Nenhuma aderência direta identificada")
+
+                if lic["dias_restantes"] is not None and lic["dias_restantes"] <= 3:
+                    st.write("🟡 Prazo muito curto para preparação da proposta")
+
+                if not lic["valor_estimado"]:
+                    st.write("🟡 Valor estimado não informado pelo órgão")
+
+            st.info(
+                "📌 **Riscos, documentação exigida, garantia contratual, critério de "
+                "julgamento e regime de execução** dependem da leitura do edital "
+                "completo e serão exibidos aqui quando o módulo de **Análise de "
+                "Edital com IA** (roadmap Versão 3) estiver disponível.",
+                icon="🤖"
+            )
+
+st.divider()
+
+st.caption(
+    "Fonte: Portal Nacional de Contratações Públicas (PNCP). "
+    "Score SCM calculado com base em região de atuação, palavras-chave e "
+    "CNAEs cadastrados em Configurações."
+)
